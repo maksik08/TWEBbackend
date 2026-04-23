@@ -23,6 +23,8 @@ namespace ProjectBackend.api.Mappings
             CreateMap<CustomerDomain, CustomerDto>().ReverseMap();
             CreateMap<CreateCustomerDto, CustomerDomain>();
             CreateMap<UpdateCustomerDto, CustomerDomain>();
+
+            CreateMap<UserDomain, UserDto>();
         }
     }
 }

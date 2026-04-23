@@ -11,5 +11,13 @@ namespace ProjectBackend.api.Data
         public DbSet<CategoryDomain> Categories { get; set; }
         public DbSet<SupplierDomain> Suppliers { get; set; }
         public DbSet<CustomerDomain> Customers { get; set; }
+        public DbSet<UserDomain> Users { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<UserDomain>()
+                .Property(u => u.Role)
+                .HasConversion<string>();
+        }
     }
 }
