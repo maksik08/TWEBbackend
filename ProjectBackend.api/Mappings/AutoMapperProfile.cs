@@ -11,6 +11,18 @@ namespace ProjectBackend.api.Mappings
             CreateMap<ProductsDomain, ProductDto>().ReverseMap();
             CreateMap<CreateProductDto, ProductsDomain>();
             CreateMap<UpdateProductDto, ProductsDomain>();
+
+            CreateMap<CategoryDomain, CategoryDto>().ReverseMap();
+            CreateMap<CreateCategoryDto, CategoryDomain>();
+            CreateMap<UpdateCategoryDto, CategoryDomain>();
+
+            CreateMap<SupplierDomain, SupplierDto>().ReverseMap();
+            CreateMap<CreateSupplierDto, SupplierDomain>();
+            CreateMap<UpdateSupplierDto, SupplierDomain>();
+
+            CreateMap<CustomerDomain, CustomerDto>().ReverseMap();
+            CreateMap<CreateCustomerDto, CustomerDomain>();
+            CreateMap<UpdateCustomerDto, CustomerDomain>();
         }
     }
 }

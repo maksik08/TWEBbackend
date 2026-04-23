@@ -37,6 +37,8 @@ namespace ProjectBackend.api.Repositories
 
             existing.Name = product.Name;
             existing.Price = product.Price;
+            existing.CategoryId = product.CategoryId;
+            existing.SupplierId = product.SupplierId;
 
             await _dbContext.SaveChangesAsync();
             return existing;

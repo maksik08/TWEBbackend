@@ -10,5 +10,9 @@ namespace ProjectBackend.api.Models.DTO
 
         [Range(0, double.MaxValue)]
         public decimal Price { get; set; }
+
+        public int? CategoryId { get; set; }
+
+        public int? SupplierId { get; set; }
     }
 }

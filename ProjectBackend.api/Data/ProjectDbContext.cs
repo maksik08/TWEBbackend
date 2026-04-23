@@ -22,5 +22,8 @@ namespace ProjectBackend.api.Data
         }
 
         public DbSet<ProductsDomain> Products { get; set; }
+        public DbSet<CategoryDomain> Categories { get; set; }
+        public DbSet<SupplierDomain> Suppliers { get; set; }
+        public DbSet<CustomerDomain> Customers { get; set; }
     }
 }
