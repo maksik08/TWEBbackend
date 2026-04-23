@@ -1,0 +1,14 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace ProjectBackend.api.Models.DTO
+{
+    public class CreateProductDto
+    {
+        [Required]
+        [MaxLength(200)]
+        public string Name { get; set; } = string.Empty;
+
+        [Range(0, double.MaxValue)]
+        public decimal Price { get; set; }
+    }
+}
