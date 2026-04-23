@@ -4,6 +4,7 @@ namespace ProjectBackend.api.Services
 {
     public interface IAuthService
     {
-        Task<(UserDto? User, string? Error)> RegisterAsync(RegisterDto dto);
+        Task<(AuthResponseDto? Response, string? Error)> RegisterAsync(RegisterDto dto);
+        Task<(AuthResponseDto? Response, string? Error)> LoginAsync(LoginDto dto);
     }
 }

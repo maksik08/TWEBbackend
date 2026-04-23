@@ -18,9 +18,17 @@ namespace ProjectBackend.api.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
-            var (user, error) = await _authService.RegisterAsync(dto);
+            var (response, error) = await _authService.RegisterAsync(dto);
             if (error is not null) return Conflict(new { message = error });
-            return Ok(user);
+            return Ok(response);
+        }
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginDto dto)
+        {
+            var (response, error) = await _authService.LoginAsync(dto);
+            if (error is not null) return Unauthorized(new { message = error });
+            return Ok(response);
         }
     }
 }

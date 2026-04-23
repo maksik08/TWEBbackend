@@ -20,6 +20,11 @@ namespace ProjectBackend.api.Repositories
             return user;
         }
 
+        public async Task<UserDomain?> GetByUsernameAsync(string username)
+        {
+            return await _dbContext.Users.FirstOrDefaultAsync(u => u.Username == username);
+        }
+
         public async Task<bool> ExistsByEmailAsync(string email)
         {
             return await _dbContext.Users.AnyAsync(u => u.Email == email);
