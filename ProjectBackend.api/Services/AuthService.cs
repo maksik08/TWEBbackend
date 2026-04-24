@@ -30,7 +30,7 @@ namespace ProjectBackend.api.Services
             {
                 Email = dto.Email,
                 Username = dto.Username,
-                Password = dto.Password
+                Password = BCrypt.Net.BCrypt.HashPassword(dto.Password)
             };
 
             var created = await _repository.CreateAsync(entity);
@@ -40,7 +40,7 @@ namespace ProjectBackend.api.Services
         public async Task<(AuthResponseDto? Response, string? Error)> LoginAsync(LoginDto dto)
         {
             var user = await _repository.GetByUsernameAsync(dto.Username);
-            if (user is null || user.Password != dto.Password)
+            if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.Password))
                 return (null, "Invalid username or password.");
 
             return (BuildResponse(user), null);
