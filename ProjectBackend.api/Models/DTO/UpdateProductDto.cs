@@ -8,6 +8,12 @@ namespace ProjectBackend.api.Models.DTO
         [MaxLength(200)]
         public string Name { get; set; } = string.Empty;
 
+        [MaxLength(200)]
+        public string? Title { get; set; }
+
+        [MaxLength(500)]
+        public string? Image { get; set; }
+
         [Range(0, double.MaxValue)]
         public decimal Price { get; set; }
 

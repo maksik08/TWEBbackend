@@ -15,12 +15,18 @@ namespace ProjectBackend.api.Repositories
 
         public async Task<List<ProductsDomain>> GetAllAsync()
         {
-            return await _dbContext.Products.ToListAsync();
+            return await _dbContext.Products
+                .Include(p => p.Category)
+                .Include(p => p.Supplier)
+                .ToListAsync();
         }
 
         public async Task<ProductsDomain?> GetByIdAsync(int id)
         {
-            return await _dbContext.Products.FirstOrDefaultAsync(p => p.Id == id);
+            return await _dbContext.Products
+                .Include(p => p.Category)
+                .Include(p => p.Supplier)
+                .FirstOrDefaultAsync(p => p.Id == id);
         }
 
         public async Task<ProductsDomain> CreateAsync(ProductsDomain product)
@@ -32,15 +38,26 @@ namespace ProjectBackend.api.Repositories
 
         public async Task<ProductsDomain?> UpdateAsync(int id, ProductsDomain product)
         {
-            var existing = await _dbContext.Products.FirstOrDefaultAsync(p => p.Id == id);
+            var existing = await _dbContext.Products
+                .Include(p => p.Category)
+                .Include(p => p.Supplier)
+                .FirstOrDefaultAsync(p => p.Id == id);
             if (existing is null) return null;
 
             existing.Name = product.Name;
+            existing.Title = product.Title;
+            existing.Image = product.Image;
             existing.Price = product.Price;
             existing.CategoryId = product.CategoryId;
             existing.SupplierId = product.SupplierId;
 
             await _dbContext.SaveChangesAsync();
+
+            if (existing.CategoryId != null && existing.Category?.Id != existing.CategoryId)
+            {
+                await _dbContext.Entry(existing).Reference(p => p.Category).LoadAsync();
+            }
+
             return existing;
         }
 

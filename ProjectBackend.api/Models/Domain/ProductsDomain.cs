@@ -10,6 +10,13 @@ namespace ProjectBackend.api.Models.Domain
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
         public required string Name { get; set; }
+
+        [MaxLength(200)]
+        public string? Title { get; set; }
+
+        [MaxLength(500)]
+        public string? Image { get; set; }
+
         public decimal Price { get; set; } = 0;
 
         public int? CategoryId { get; set; }

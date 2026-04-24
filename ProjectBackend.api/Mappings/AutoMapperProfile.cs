@@ -8,7 +8,12 @@ namespace ProjectBackend.api.Mappings
     {
         public AutoMapperProfile()
         {
-            CreateMap<ProductsDomain, ProductDto>().ReverseMap();
+            CreateMap<ProductsDomain, ProductDto>()
+                .ForMember(dest => dest.Category,
+                    opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : null));
+            CreateMap<ProductDto, ProductsDomain>()
+                .ForMember(dest => dest.Category, opt => opt.Ignore())
+                .ForMember(dest => dest.Supplier, opt => opt.Ignore());
             CreateMap<CreateProductDto, ProductsDomain>();
             CreateMap<UpdateProductDto, ProductsDomain>();
 
