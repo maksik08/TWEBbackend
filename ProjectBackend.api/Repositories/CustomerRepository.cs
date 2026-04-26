@@ -15,12 +15,16 @@ namespace ProjectBackend.api.Repositories
 
         public async Task<List<CustomerDomain>> GetAllAsync()
         {
-            return await _dbContext.Customers.ToListAsync();
+            return await _dbContext.Customers
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task<CustomerDomain?> GetByIdAsync(int id)
         {
-            return await _dbContext.Customers.FirstOrDefaultAsync(c => c.Id == id);
+            return await _dbContext.Customers
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == id);
         }
 
         public async Task<CustomerDomain> CreateAsync(CustomerDomain customer)

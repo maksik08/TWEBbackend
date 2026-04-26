@@ -30,7 +30,8 @@ namespace ProjectBackend.api.Services
             {
                 Email = dto.Email,
                 Username = dto.Username,
-                Password = BCrypt.Net.BCrypt.HashPassword(dto.Password)
+                Password = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+                Role = UserRole.User
             };
 
             var created = await _repository.CreateAsync(entity);

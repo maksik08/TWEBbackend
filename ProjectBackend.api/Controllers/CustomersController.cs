@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using ProjectBackend.api.Filters;
 using ProjectBackend.api.Models.DTO;
 using ProjectBackend.api.Services;
 
@@ -6,6 +7,7 @@ namespace ProjectBackend.api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [UserAccess]
     public class CustomersController : ControllerBase
     {
         private readonly ICustomerService _customerService;
@@ -30,6 +32,7 @@ namespace ProjectBackend.api.Controllers
             return Ok(customer);
         }
 
+        [AdminMod]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateCustomerDto dto)
         {
@@ -37,6 +40,7 @@ namespace ProjectBackend.api.Controllers
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
+        [AdminMod]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateCustomerDto dto)
         {
@@ -45,6 +49,7 @@ namespace ProjectBackend.api.Controllers
             return Ok(updated);
         }
 
+        [AdminMod]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {

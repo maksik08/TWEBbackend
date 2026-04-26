@@ -15,12 +15,26 @@ namespace ProjectBackend.api.Repositories
 
         public async Task<List<CategoryDomain>> GetAllAsync()
         {
-            return await _dbContext.Categories.ToListAsync();
+            return await _dbContext.Categories
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task<CategoryDomain?> GetByIdAsync(int id)
         {
-            return await _dbContext.Categories.FirstOrDefaultAsync(c => c.Id == id);
+            return await _dbContext.Categories
+                .AsNoTracking()
+                .FirstOrDefaultAsync(c => c.Id == id);
+        }
+
+        public async Task<bool> ExistsAsync(int id)
+        {
+            return await _dbContext.Categories.AnyAsync(c => c.Id == id);
+        }
+
+        public async Task<bool> HasProductsAsync(int id)
+        {
+            return await _dbContext.Products.AnyAsync(p => p.CategoryId == id);
         }
 
         public async Task<CategoryDomain> CreateAsync(CategoryDomain category)

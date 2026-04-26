@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using ProjectBackend.api.Filters;
 using ProjectBackend.api.Models.DTO;
 using ProjectBackend.api.Services;
 
@@ -15,6 +16,7 @@ namespace ProjectBackend.api.Controllers
             _authService = authService;
         }
 
+        [GuestOnly]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
@@ -23,6 +25,7 @@ namespace ProjectBackend.api.Controllers
             return Ok(response);
         }
 
+        [GuestOnly]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {

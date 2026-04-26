@@ -44,6 +44,11 @@ namespace ProjectBackend.api.Services
 
         public async Task<CategoryDto?> DeleteAsync(int id)
         {
+            if (await _repository.HasProductsAsync(id))
+            {
+                throw new InvalidOperationException("The category cannot be deleted because it is used by existing products.");
+            }
+
             var deleted = await _repository.DeleteAsync(id);
             return deleted is null ? null : _mapper.Map<CategoryDto>(deleted);
         }

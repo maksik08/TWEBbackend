@@ -16,6 +16,7 @@ namespace ProjectBackend.api.Repositories
         public async Task<List<ProductsDomain>> GetAllAsync()
         {
             return await _dbContext.Products
+                .AsNoTracking()
                 .Include(p => p.Category)
                 .Include(p => p.Supplier)
                 .ToListAsync();
@@ -24,6 +25,7 @@ namespace ProjectBackend.api.Repositories
         public async Task<ProductsDomain?> GetByIdAsync(int id)
         {
             return await _dbContext.Products
+                .AsNoTracking()
                 .Include(p => p.Category)
                 .Include(p => p.Supplier)
                 .FirstOrDefaultAsync(p => p.Id == id);
@@ -56,6 +58,11 @@ namespace ProjectBackend.api.Repositories
             if (existing.CategoryId != null && existing.Category?.Id != existing.CategoryId)
             {
                 await _dbContext.Entry(existing).Reference(p => p.Category).LoadAsync();
+            }
+
+            if (existing.SupplierId != null && existing.Supplier?.Id != existing.SupplierId)
+            {
+                await _dbContext.Entry(existing).Reference(p => p.Supplier).LoadAsync();
             }
 
             return existing;

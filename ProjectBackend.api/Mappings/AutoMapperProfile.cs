@@ -10,7 +10,9 @@ namespace ProjectBackend.api.Mappings
         {
             CreateMap<ProductsDomain, ProductDto>()
                 .ForMember(dest => dest.Category,
-                    opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : null));
+                    opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : null))
+                .ForMember(dest => dest.Supplier,
+                    opt => opt.MapFrom(src => src.Supplier != null ? src.Supplier.Name : null));
             CreateMap<ProductDto, ProductsDomain>()
                 .ForMember(dest => dest.Category, opt => opt.Ignore())
                 .ForMember(dest => dest.Supplier, opt => opt.Ignore());
@@ -30,6 +32,10 @@ namespace ProjectBackend.api.Mappings
             CreateMap<UpdateCustomerDto, CustomerDomain>();
 
             CreateMap<UserDomain, UserDto>();
+            CreateMap<CreateUserDto, UserDomain>()
+                .ForMember(dest => dest.Password, opt => opt.Ignore());
+            CreateMap<UpdateUserDto, UserDomain>()
+                .ForMember(dest => dest.Password, opt => opt.Ignore());
         }
     }
 }

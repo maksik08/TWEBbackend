@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using ProjectBackend.api.Filters;
 using ProjectBackend.api.Models.DTO;
 using ProjectBackend.api.Services;
 
@@ -6,6 +7,7 @@ namespace ProjectBackend.api.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [UserAccess]
     public class CategoriesController : ControllerBase
     {
         private readonly ICategoryService _categoryService;
@@ -30,6 +32,7 @@ namespace ProjectBackend.api.Controllers
             return Ok(category);
         }
 
+        [AdminMod]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateCategoryDto dto)
         {
@@ -37,6 +40,7 @@ namespace ProjectBackend.api.Controllers
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
+        [AdminMod]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateCategoryDto dto)
         {
@@ -45,12 +49,20 @@ namespace ProjectBackend.api.Controllers
             return Ok(updated);
         }
 
+        [AdminMod]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            var deleted = await _categoryService.DeleteAsync(id);
-            if (deleted is null) return NotFound();
-            return Ok(deleted);
+            try
+            {
+                var deleted = await _categoryService.DeleteAsync(id);
+                if (deleted is null) return NotFound();
+                return Ok(deleted);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }

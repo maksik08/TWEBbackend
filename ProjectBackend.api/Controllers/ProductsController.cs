@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using ProjectBackend.api.Filters;
 using ProjectBackend.api.Models.DTO;
 using ProjectBackend.api.Services;
 
@@ -30,21 +31,38 @@ namespace ProjectBackend.api.Controllers
             return Ok(product);
         }
 
+        [AdminMod]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateProductDto dto)
         {
-            var created = await _productService.CreateAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+            try
+            {
+                var created = await _productService.CreateAsync(dto);
+                return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
+        [AdminMod]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateProductDto dto)
         {
-            var updated = await _productService.UpdateAsync(id, dto);
-            if (updated is null) return NotFound();
-            return Ok(updated);
+            try
+            {
+                var updated = await _productService.UpdateAsync(id, dto);
+                if (updated is null) return NotFound();
+                return Ok(updated);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
+        [AdminMod]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {

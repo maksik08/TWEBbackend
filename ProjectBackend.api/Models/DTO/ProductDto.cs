@@ -10,5 +10,6 @@ namespace ProjectBackend.api.Models.DTO
         public int? CategoryId { get; set; }
         public string? Category { get; set; }
         public int? SupplierId { get; set; }
+        public string? Supplier { get; set; }
     }
 }

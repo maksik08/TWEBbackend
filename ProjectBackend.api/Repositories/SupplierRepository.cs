@@ -15,12 +15,26 @@ namespace ProjectBackend.api.Repositories
 
         public async Task<List<SupplierDomain>> GetAllAsync()
         {
-            return await _dbContext.Suppliers.ToListAsync();
+            return await _dbContext.Suppliers
+                .AsNoTracking()
+                .ToListAsync();
         }
 
         public async Task<SupplierDomain?> GetByIdAsync(int id)
         {
-            return await _dbContext.Suppliers.FirstOrDefaultAsync(s => s.Id == id);
+            return await _dbContext.Suppliers
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == id);
+        }
+
+        public async Task<bool> ExistsAsync(int id)
+        {
+            return await _dbContext.Suppliers.AnyAsync(s => s.Id == id);
+        }
+
+        public async Task<bool> HasProductsAsync(int id)
+        {
+            return await _dbContext.Products.AnyAsync(p => p.SupplierId == id);
         }
 
         public async Task<SupplierDomain> CreateAsync(SupplierDomain supplier)
