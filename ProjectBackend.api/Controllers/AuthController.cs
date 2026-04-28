@@ -20,8 +20,7 @@ namespace ProjectBackend.api.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
-            var (response, error) = await _authService.RegisterAsync(dto);
-            if (error is not null) return Conflict(new { message = error });
+            var response = await _authService.RegisterAsync(dto);
             return Ok(response);
         }
 
@@ -29,8 +28,7 @@ namespace ProjectBackend.api.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
-            var (response, error) = await _authService.LoginAsync(dto);
-            if (error is not null) return Unauthorized(new { message = error });
+            var response = await _authService.LoginAsync(dto);
             return Ok(response);
         }
     }

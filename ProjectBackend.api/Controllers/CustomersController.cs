@@ -28,7 +28,6 @@ namespace ProjectBackend.api.Controllers
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
             var customer = await _customerService.GetByIdAsync(id);
-            if (customer is null) return NotFound();
             return Ok(customer);
         }
 
@@ -45,7 +44,6 @@ namespace ProjectBackend.api.Controllers
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateCustomerDto dto)
         {
             var updated = await _customerService.UpdateAsync(id, dto);
-            if (updated is null) return NotFound();
             return Ok(updated);
         }
 
@@ -54,7 +52,6 @@ namespace ProjectBackend.api.Controllers
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
             var deleted = await _customerService.DeleteAsync(id);
-            if (deleted is null) return NotFound();
             return Ok(deleted);
         }
     }

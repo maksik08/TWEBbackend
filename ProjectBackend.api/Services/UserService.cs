@@ -1,4 +1,5 @@
 using AutoMapper;
+using ProjectBackend.api.Exceptions;
 using ProjectBackend.api.Models.Domain;
 using ProjectBackend.api.Models.DTO;
 using ProjectBackend.api.Repositories;
@@ -22,10 +23,15 @@ namespace ProjectBackend.api.Services
             return _mapper.Map<List<UserDto>>(users);
         }
 
-        public async Task<UserDto?> GetByIdAsync(int id)
+        public async Task<UserDto> GetByIdAsync(int id)
         {
             var user = await _repository.GetByIdAsync(id);
-            return user is null ? null : _mapper.Map<UserDto>(user);
+            if (user is null)
+            {
+                throw new NotFoundException($"User with id {id} was not found.");
+            }
+
+            return _mapper.Map<UserDto>(user);
         }
 
         public async Task<UserDto> CreateAsync(CreateUserDto dto)
@@ -39,7 +45,7 @@ namespace ProjectBackend.api.Services
             return _mapper.Map<UserDto>(created);
         }
 
-        public async Task<UserDto?> UpdateAsync(int id, UpdateUserDto dto)
+        public async Task<UserDto> UpdateAsync(int id, UpdateUserDto dto)
         {
             await EnsureUniqueCredentialsAsync(dto.Email, dto.Username, id);
 
@@ -50,25 +56,35 @@ namespace ProjectBackend.api.Services
                 : string.Empty;
 
             var updated = await _repository.UpdateAsync(id, entity, updatePassword);
-            return updated is null ? null : _mapper.Map<UserDto>(updated);
+            if (updated is null)
+            {
+                throw new NotFoundException($"User with id {id} was not found.");
+            }
+
+            return _mapper.Map<UserDto>(updated);
         }
 
-        public async Task<UserDto?> DeleteAsync(int id)
+        public async Task<UserDto> DeleteAsync(int id)
         {
             var deleted = await _repository.DeleteAsync(id);
-            return deleted is null ? null : _mapper.Map<UserDto>(deleted);
+            if (deleted is null)
+            {
+                throw new NotFoundException($"User with id {id} was not found.");
+            }
+
+            return _mapper.Map<UserDto>(deleted);
         }
 
         private async Task EnsureUniqueCredentialsAsync(string email, string username, int? excludedUserId = null)
         {
             if (await _repository.ExistsByEmailAsync(email, excludedUserId))
             {
-                throw new InvalidOperationException("A user with this email already exists.");
+                throw new ConflictException("A user with this email already exists.");
             }
 
             if (await _repository.ExistsByUsernameAsync(username, excludedUserId))
             {
-                throw new InvalidOperationException("A user with this username already exists.");
+                throw new ConflictException("A user with this username already exists.");
             }
         }
     }

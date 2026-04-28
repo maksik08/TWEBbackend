@@ -1,4 +1,5 @@
 using AutoMapper;
+using ProjectBackend.api.Exceptions;
 using ProjectBackend.api.Models.Domain;
 using ProjectBackend.api.Models.DTO;
 using ProjectBackend.api.Repositories;
@@ -22,10 +23,15 @@ namespace ProjectBackend.api.Services
             return _mapper.Map<List<CustomerDto>>(customers);
         }
 
-        public async Task<CustomerDto?> GetByIdAsync(int id)
+        public async Task<CustomerDto> GetByIdAsync(int id)
         {
             var customer = await _repository.GetByIdAsync(id);
-            return customer is null ? null : _mapper.Map<CustomerDto>(customer);
+            if (customer is null)
+            {
+                throw new NotFoundException($"Customer with id {id} was not found.");
+            }
+
+            return _mapper.Map<CustomerDto>(customer);
         }
 
         public async Task<CustomerDto> CreateAsync(CreateCustomerDto dto)
@@ -35,17 +41,27 @@ namespace ProjectBackend.api.Services
             return _mapper.Map<CustomerDto>(created);
         }
 
-        public async Task<CustomerDto?> UpdateAsync(int id, UpdateCustomerDto dto)
+        public async Task<CustomerDto> UpdateAsync(int id, UpdateCustomerDto dto)
         {
             var entity = _mapper.Map<CustomerDomain>(dto);
             var updated = await _repository.UpdateAsync(id, entity);
-            return updated is null ? null : _mapper.Map<CustomerDto>(updated);
+            if (updated is null)
+            {
+                throw new NotFoundException($"Customer with id {id} was not found.");
+            }
+
+            return _mapper.Map<CustomerDto>(updated);
         }
 
-        public async Task<CustomerDto?> DeleteAsync(int id)
+        public async Task<CustomerDto> DeleteAsync(int id)
         {
             var deleted = await _repository.DeleteAsync(id);
-            return deleted is null ? null : _mapper.Map<CustomerDto>(deleted);
+            if (deleted is null)
+            {
+                throw new NotFoundException($"Customer with id {id} was not found.");
+            }
+
+            return _mapper.Map<CustomerDto>(deleted);
         }
     }
 }

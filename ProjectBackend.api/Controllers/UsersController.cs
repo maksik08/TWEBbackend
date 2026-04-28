@@ -28,11 +28,6 @@ namespace ProjectBackend.api.Controllers
             }
 
             var user = await _userService.GetByIdAsync(userId);
-            if (user is null)
-            {
-                return NotFound();
-            }
-
             return Ok(user);
         }
 
@@ -49,7 +44,6 @@ namespace ProjectBackend.api.Controllers
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
             var user = await _userService.GetByIdAsync(id);
-            if (user is null) return NotFound();
             return Ok(user);
         }
 
@@ -57,31 +51,16 @@ namespace ProjectBackend.api.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateUserDto dto)
         {
-            try
-            {
-                var created = await _userService.CreateAsync(dto);
-                return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(new { message = ex.Message });
-            }
+            var created = await _userService.CreateAsync(dto);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
         [AdminMod]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateUserDto dto)
         {
-            try
-            {
-                var updated = await _userService.UpdateAsync(id, dto);
-                if (updated is null) return NotFound();
-                return Ok(updated);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Conflict(new { message = ex.Message });
-            }
+            var updated = await _userService.UpdateAsync(id, dto);
+            return Ok(updated);
         }
 
         [AdminMod]
@@ -89,7 +68,6 @@ namespace ProjectBackend.api.Controllers
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
             var deleted = await _userService.DeleteAsync(id);
-            if (deleted is null) return NotFound();
             return Ok(deleted);
         }
     }

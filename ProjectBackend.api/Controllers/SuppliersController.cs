@@ -28,7 +28,6 @@ namespace ProjectBackend.api.Controllers
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
             var supplier = await _supplierService.GetByIdAsync(id);
-            if (supplier is null) return NotFound();
             return Ok(supplier);
         }
 
@@ -45,7 +44,6 @@ namespace ProjectBackend.api.Controllers
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateSupplierDto dto)
         {
             var updated = await _supplierService.UpdateAsync(id, dto);
-            if (updated is null) return NotFound();
             return Ok(updated);
         }
 
@@ -53,16 +51,8 @@ namespace ProjectBackend.api.Controllers
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            try
-            {
-                var deleted = await _supplierService.DeleteAsync(id);
-                if (deleted is null) return NotFound();
-                return Ok(deleted);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(new { message = ex.Message });
-            }
+            var deleted = await _supplierService.DeleteAsync(id);
+            return Ok(deleted);
         }
     }
 }

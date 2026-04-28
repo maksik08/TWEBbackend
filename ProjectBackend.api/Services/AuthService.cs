@@ -1,4 +1,5 @@
 using AutoMapper;
+using ProjectBackend.api.Exceptions;
 using ProjectBackend.api.Models.Domain;
 using ProjectBackend.api.Models.DTO;
 using ProjectBackend.api.Repositories;
@@ -18,13 +19,17 @@ namespace ProjectBackend.api.Services
             _mapper = mapper;
         }
 
-        public async Task<(AuthResponseDto? Response, string? Error)> RegisterAsync(RegisterDto dto)
+        public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto)
         {
             if (await _repository.ExistsByEmailAsync(dto.Email))
-                return (null, "Email is already registered.");
+            {
+                throw new ConflictException("Email is already registered.");
+            }
 
             if (await _repository.ExistsByUsernameAsync(dto.Username))
-                return (null, "Username is already taken.");
+            {
+                throw new ConflictException("Username is already taken.");
+            }
 
             var entity = new UserDomain
             {
@@ -35,16 +40,18 @@ namespace ProjectBackend.api.Services
             };
 
             var created = await _repository.CreateAsync(entity);
-            return (BuildResponse(created), null);
+            return BuildResponse(created);
         }
 
-        public async Task<(AuthResponseDto? Response, string? Error)> LoginAsync(LoginDto dto)
+        public async Task<AuthResponseDto> LoginAsync(LoginDto dto)
         {
             var user = await _repository.GetByUsernameAsync(dto.Username);
             if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.Password))
-                return (null, "Invalid username or password.");
+            {
+                throw new UnauthorizedAppException("Invalid username or password.");
+            }
 
-            return (BuildResponse(user), null);
+            return BuildResponse(user);
         }
 
         private AuthResponseDto BuildResponse(UserDomain user)

@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using ProjectBackend.api.Data;
 using ProjectBackend.api.Mappings;
+using ProjectBackend.api.Middleware;
 using ProjectBackend.api.Repositories;
 using ProjectBackend.api.Services;
 
@@ -61,6 +62,9 @@ builder.Services.AddSwaggerGen(options =>
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ProjectDbContext>(options =>
     options.UseSqlServer(connectionString));
+builder.Services.Configure<AdminSeedOptions>(
+    builder.Configuration.GetSection(AdminSeedOptions.SectionName));
+builder.Services.AddScoped<IDatabaseInitializer, DatabaseInitializer>();
 
 
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
@@ -105,12 +109,19 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var databaseInitializer = scope.ServiceProvider.GetRequiredService<IDatabaseInitializer>();
+    await databaseInitializer.InitializeAsync();
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
 
+app.UseExceptionHandlingMiddleware();
 app.UseHttpsRedirection();
 
 app.UseCors("AllowFrontend");

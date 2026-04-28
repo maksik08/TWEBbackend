@@ -1,4 +1,5 @@
 using AutoMapper;
+using ProjectBackend.api.Exceptions;
 using ProjectBackend.api.Models.Domain;
 using ProjectBackend.api.Models.DTO;
 using ProjectBackend.api.Repositories;
@@ -30,10 +31,15 @@ namespace ProjectBackend.api.Services
             return _mapper.Map<List<ProductDto>>(products);
         }
 
-        public async Task<ProductDto?> GetByIdAsync(int id)
+        public async Task<ProductDto> GetByIdAsync(int id)
         {
             var product = await _repository.GetByIdAsync(id);
-            return product is null ? null : _mapper.Map<ProductDto>(product);
+            if (product is null)
+            {
+                throw new NotFoundException($"Product with id {id} was not found.");
+            }
+
+            return _mapper.Map<ProductDto>(product);
         }
 
         public async Task<ProductDto> CreateAsync(CreateProductDto dto)
@@ -44,30 +50,40 @@ namespace ProjectBackend.api.Services
             return _mapper.Map<ProductDto>(created);
         }
 
-        public async Task<ProductDto?> UpdateAsync(int id, UpdateProductDto dto)
+        public async Task<ProductDto> UpdateAsync(int id, UpdateProductDto dto)
         {
             await ValidateReferencesAsync(dto.CategoryId, dto.SupplierId);
             var entity = _mapper.Map<ProductsDomain>(dto);
             var updated = await _repository.UpdateAsync(id, entity);
-            return updated is null ? null : _mapper.Map<ProductDto>(updated);
+            if (updated is null)
+            {
+                throw new NotFoundException($"Product with id {id} was not found.");
+            }
+
+            return _mapper.Map<ProductDto>(updated);
         }
 
-        public async Task<ProductDto?> DeleteAsync(int id)
+        public async Task<ProductDto> DeleteAsync(int id)
         {
             var deleted = await _repository.DeleteAsync(id);
-            return deleted is null ? null : _mapper.Map<ProductDto>(deleted);
+            if (deleted is null)
+            {
+                throw new NotFoundException($"Product with id {id} was not found.");
+            }
+
+            return _mapper.Map<ProductDto>(deleted);
         }
 
         private async Task ValidateReferencesAsync(int? categoryId, int? supplierId)
         {
             if (categoryId.HasValue && !await _categoryRepository.ExistsAsync(categoryId.Value))
             {
-                throw new InvalidOperationException("The selected category does not exist.");
+                throw new ValidationException("The selected category does not exist.");
             }
 
             if (supplierId.HasValue && !await _supplierRepository.ExistsAsync(supplierId.Value))
             {
-                throw new InvalidOperationException("The selected supplier does not exist.");
+                throw new ValidationException("The selected supplier does not exist.");
             }
         }
     }
