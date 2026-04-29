@@ -39,7 +39,7 @@ namespace ProjectBackend.api.Controllers
             return Ok(users);
         }
 
-        [AdminMod]
+        [OwnerOrAdmin]
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById([FromRoute] int id)
         {
@@ -63,7 +63,7 @@ namespace ProjectBackend.api.Controllers
             return Ok(updated);
         }
 
-        [AdminMod]
+        [OwnerOrAdmin]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete([FromRoute] int id)
         {

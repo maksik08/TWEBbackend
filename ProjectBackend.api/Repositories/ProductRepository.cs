@@ -40,10 +40,7 @@ namespace ProjectBackend.api.Repositories
 
         public async Task<ProductsDomain?> UpdateAsync(int id, ProductsDomain product)
         {
-            var existing = await _dbContext.Products
-                .Include(p => p.Category)
-                .Include(p => p.Supplier)
-                .FirstOrDefaultAsync(p => p.Id == id);
+            var existing = await _dbContext.Products.FirstOrDefaultAsync(p => p.Id == id);
             if (existing is null) return null;
 
             existing.Name = product.Name;
@@ -55,17 +52,27 @@ namespace ProjectBackend.api.Repositories
 
             await _dbContext.SaveChangesAsync();
 
-            if (existing.CategoryId != null && existing.Category?.Id != existing.CategoryId)
-            {
-                await _dbContext.Entry(existing).Reference(p => p.Category).LoadAsync();
-            }
-
-            if (existing.SupplierId != null && existing.Supplier?.Id != existing.SupplierId)
-            {
-                await _dbContext.Entry(existing).Reference(p => p.Supplier).LoadAsync();
-            }
+            await ReloadReferenceAsync(existing, p => p.Category, existing.CategoryId.HasValue);
+            await ReloadReferenceAsync(existing, p => p.Supplier, existing.SupplierId.HasValue);
 
             return existing;
+        }
+
+        private async Task ReloadReferenceAsync<TProperty>(
+            ProductsDomain entity,
+            System.Linq.Expressions.Expression<Func<ProductsDomain, TProperty?>> navigation,
+            bool hasForeignKey)
+            where TProperty : class
+        {
+            var reference = _dbContext.Entry(entity).Reference(navigation);
+            if (!hasForeignKey)
+            {
+                reference.CurrentValue = null;
+                return;
+            }
+
+            reference.IsLoaded = false;
+            await reference.LoadAsync();
         }
 
         public async Task<ProductsDomain?> DeleteAsync(int id)

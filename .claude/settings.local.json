@@ -3,7 +3,8 @@
     "allow": [
       "Bash(dotnet ef *)",
       "Bash(dotnet build *)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "Bash(dotnet test *)"
     ]
   }
 }

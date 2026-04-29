@@ -51,9 +51,10 @@ namespace ProjectBackend.api.Services
 
             var entity = _mapper.Map<UserDomain>(dto);
             var updatePassword = !string.IsNullOrWhiteSpace(dto.Password);
-            entity.Password = updatePassword
-                ? BCrypt.Net.BCrypt.HashPassword(dto.Password!)
-                : string.Empty;
+            if (updatePassword)
+            {
+                entity.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password!);
+            }
 
             var updated = await _repository.UpdateAsync(id, entity, updatePassword);
             if (updated is null)
