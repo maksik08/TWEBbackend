@@ -1,28 +1,24 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using ProjectBackend.api.Configuration;
 using ProjectBackend.api.Models.Domain;
 
 namespace ProjectBackend.api.Services
 {
     public class TokenService : ITokenService
     {
-        private readonly IConfiguration _configuration;
+        private readonly JwtOptions _jwtOptions;
 
-        public TokenService(IConfiguration configuration)
+        public TokenService(IOptions<JwtOptions> jwtOptions)
         {
-            _configuration = configuration;
+            _jwtOptions = jwtOptions.Value;
         }
 
         public string CreateToken(UserDomain user)
         {
-            var jwtSection = _configuration.GetSection("Jwt");
-            var key = jwtSection["Key"]!;
-            var issuer = jwtSection["Issuer"];
-            var audience = jwtSection["Audience"];
-            var expiryHours = int.Parse(jwtSection["ExpiryHours"] ?? "2");
-
             var claims = new[]
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
@@ -33,14 +29,14 @@ namespace ProjectBackend.api.Services
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
-            var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
+            var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtOptions.Key));
             var credentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                issuer: issuer,
-                audience: audience,
+                issuer: _jwtOptions.Issuer,
+                audience: _jwtOptions.Audience,
                 claims: claims,
-                expires: DateTime.UtcNow.AddHours(expiryHours),
+                expires: DateTime.UtcNow.AddHours(_jwtOptions.ExpiryHours),
                 signingCredentials: credentials
             );
 

@@ -12,12 +12,6 @@ namespace ProjectBackend.api.Filters
             return context.HttpContext.User.FindFirstValue(ClaimTypes.Role);
         }
 
-        protected static int? GetUserId(ActionExecutingContext context)
-        {
-            var idValue = context.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
-            return int.TryParse(idValue, out var userId) ? userId : null;
-        }
-
         protected static bool IsAuthenticated(ActionExecutingContext context)
         {
             return context.HttpContext.User.Identity?.IsAuthenticated == true;
