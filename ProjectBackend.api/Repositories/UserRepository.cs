@@ -123,5 +123,28 @@ namespace ProjectBackend.api.Repositories
                 u.Username == username &&
                 (!excludedUserId.HasValue || u.Id != excludedUserId.Value), cancellationToken);
         }
+
+        public async Task<UserDomain?> UpdateProfileAsync(int id, string? firstName, string? lastName, string? phone, CancellationToken cancellationToken)
+        {
+            var existing = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+            if (existing is null) return null;
+
+            existing.FirstName = firstName;
+            existing.LastName = lastName;
+            existing.Phone = phone;
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            return existing;
+        }
+
+        public async Task<UserDomain?> AdjustBalanceAsync(int id, decimal delta, CancellationToken cancellationToken)
+        {
+            var existing = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+            if (existing is null) return null;
+
+            existing.Balance += delta;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            return existing;
+        }
     }
 }

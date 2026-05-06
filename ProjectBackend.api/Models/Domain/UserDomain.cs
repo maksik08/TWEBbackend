@@ -16,5 +16,16 @@ namespace ProjectBackend.api.Models.Domain
         public required string Password { get; set; }
 
         public UserRole Role { get; set; } = UserRole.Customer;
+
+        [MaxLength(100)]
+        public string? FirstName { get; set; }
+
+        [MaxLength(100)]
+        public string? LastName { get; set; }
+
+        [MaxLength(50)]
+        public string? Phone { get; set; }
+
+        public decimal Balance { get; set; }
     }
 }

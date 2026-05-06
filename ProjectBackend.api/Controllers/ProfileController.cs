@@ -25,18 +25,42 @@ namespace ProjectBackend.api.Controllers
 
         /// <summary>
         /// Returns the currently authenticated user profile.
-        /// Access: authenticated user or admin.
         /// </summary>
         [HttpGet("me")]
         public async Task<IActionResult> GetCurrentUser(CancellationToken cancellationToken)
         {
+            var user = await _userService.GetByIdAsync(RequireUserId(), cancellationToken);
+            return Ok(ApiResponse<UserDto>.Ok(user));
+        }
+
+        /// <summary>
+        /// Updates first/last name and phone for the current user.
+        /// </summary>
+        [HttpPut("me")]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto dto, CancellationToken cancellationToken)
+        {
+            var user = await _userService.UpdateProfileAsync(RequireUserId(), dto, cancellationToken);
+            return Ok(ApiResponse<UserDto>.Ok(user, "Profile updated successfully."));
+        }
+
+        /// <summary>
+        /// Tops up the balance of the current user (mock payment).
+        /// </summary>
+        [HttpPost("me/topup")]
+        public async Task<IActionResult> TopUp([FromBody] TopUpBalanceDto dto, CancellationToken cancellationToken)
+        {
+            var user = await _userService.TopUpBalanceAsync(RequireUserId(), dto.Amount, cancellationToken);
+            return Ok(ApiResponse<UserDto>.Ok(user, "Balance topped up successfully."));
+        }
+
+        private int RequireUserId()
+        {
             if (!_currentUserContext.UserId.HasValue)
             {
-                return Unauthorized(ApiResponse<object?>.Fail("Invalid user identity."));
+                throw new Exceptions.UnauthorizedAppException("Invalid user identity.");
             }
 
-            var user = await _userService.GetByIdAsync(_currentUserContext.UserId.Value, cancellationToken);
-            return Ok(ApiResponse<UserDto>.Ok(user));
+            return _currentUserContext.UserId.Value;
         }
     }
 }

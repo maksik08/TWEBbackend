@@ -87,6 +87,10 @@ namespace ProjectBackend.api.Data
                 entity.Property(u => u.Role).HasConversion<string>();
                 entity.Property(u => u.CreatedAt).HasColumnType("datetime2");
                 entity.Property(u => u.UpdatedAt).HasColumnType("datetime2");
+                entity.Property(u => u.FirstName).HasMaxLength(100);
+                entity.Property(u => u.LastName).HasMaxLength(100);
+                entity.Property(u => u.Phone).HasMaxLength(50);
+                entity.Property(u => u.Balance).HasColumnType("decimal(18,2)");
                 entity.HasIndex(u => u.Email).IsUnique();
                 entity.HasIndex(u => u.Username).IsUnique();
             });

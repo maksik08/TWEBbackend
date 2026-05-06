@@ -13,17 +13,20 @@ namespace ProjectBackend.api.Services
     public class OrderService : ApplicationServiceBase, IOrderService
     {
         private readonly IOrderRepository _orderRepository;
+        private readonly IUserRepository _userRepository;
         private readonly ProjectDbContext _dbContext;
         private readonly ICurrentUserContext _currentUser;
         private readonly IMapper _mapper;
 
         public OrderService(
             IOrderRepository orderRepository,
+            IUserRepository userRepository,
             ProjectDbContext dbContext,
             ICurrentUserContext currentUser,
             IMapper mapper)
         {
             _orderRepository = orderRepository;
+            _userRepository = userRepository;
             _dbContext = dbContext;
             _currentUser = currentUser;
             _mapper = mapper;
@@ -123,7 +126,18 @@ namespace ProjectBackend.api.Services
                 throw new ValidationException($"Only pending orders can be paid. Current status: {order.Status}.");
             }
 
+            var payer = EnsureFound(await _userRepository.GetByIdAsync(order.UserId, cancellationToken), "User", order.UserId);
+            if (payer.Balance < order.Subtotal)
+            {
+                throw new ValidationException("Insufficient balance to pay for this order.");
+            }
+
+            await using var transaction = await _orderRepository.BeginTransactionAsync(cancellationToken);
+
+            await _userRepository.AdjustBalanceAsync(order.UserId, -order.Subtotal, cancellationToken);
             var updated = await _orderRepository.UpdateStatusAsync(id, OrderStatus.Paid, DateTime.UtcNow, cancellationToken);
+
+            await transaction.CommitAsync(cancellationToken);
             return _mapper.Map<OrderDto>(updated!);
         }
 
@@ -137,7 +151,15 @@ namespace ProjectBackend.api.Services
                 throw new ValidationException($"Order in status {order.Status} cannot be cancelled.");
             }
 
+            await using var transaction = await _orderRepository.BeginTransactionAsync(cancellationToken);
+
+            if (order.Status == OrderStatus.Paid)
+            {
+                await _userRepository.AdjustBalanceAsync(order.UserId, order.Subtotal, cancellationToken);
+            }
+
             var updated = await _orderRepository.UpdateStatusAsync(id, OrderStatus.Cancelled, null, cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
             return _mapper.Map<OrderDto>(updated!);
         }
 

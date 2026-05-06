@@ -108,6 +108,33 @@ namespace ProjectBackend.api.Services
             return _mapper.Map<UserDto>(deleted);
         }
 
+        public async Task<UserDto> UpdateProfileAsync(int id, UpdateProfileDto dto, CancellationToken cancellationToken)
+        {
+            EnsureFound(await _repository.GetByIdAsync(id, cancellationToken), "User", id);
+
+            var firstName = NormalizeOptionalText(dto.FirstName);
+            var lastName = NormalizeOptionalText(dto.LastName);
+            var phone = NormalizeOptionalText(dto.Phone);
+
+            var updated = await _repository.UpdateProfileAsync(id, firstName, lastName, phone, cancellationToken);
+            updated = EnsureFound(updated, "User", id);
+            return _mapper.Map<UserDto>(updated);
+        }
+
+        public async Task<UserDto> TopUpBalanceAsync(int id, decimal amount, CancellationToken cancellationToken)
+        {
+            if (amount <= 0)
+            {
+                throw new ValidationException("Amount must be greater than zero.");
+            }
+
+            EnsureFound(await _repository.GetByIdAsync(id, cancellationToken), "User", id);
+
+            var updated = await _repository.AdjustBalanceAsync(id, amount, cancellationToken);
+            updated = EnsureFound(updated, "User", id);
+            return _mapper.Map<UserDto>(updated);
+        }
+
         private async Task EnsureUniqueCredentialsAsync(
             string email,
             string username,
