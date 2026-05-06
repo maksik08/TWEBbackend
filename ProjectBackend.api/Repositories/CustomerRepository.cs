@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectBackend.api.Data;
+using ProjectBackend.api.Models.Common;
 using ProjectBackend.api.Models.Domain;
+using ProjectBackend.api.Models.Query;
 
 namespace ProjectBackend.api.Repositories
 {
@@ -13,30 +15,64 @@ namespace ProjectBackend.api.Repositories
             _dbContext = dbContext;
         }
 
-        public async Task<List<CustomerDomain>> GetAllAsync()
+        public async Task<PagedResult<CustomerDomain>> GetAllAsync(CustomerQueryOptions queryOptions, CancellationToken cancellationToken)
+        {
+            var query = _dbContext.Customers.AsNoTracking().AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(queryOptions.Search))
+            {
+                query = query.Where(customer =>
+                    customer.FirstName.Contains(queryOptions.Search) ||
+                    customer.LastName.Contains(queryOptions.Search) ||
+                    (customer.Email != null && customer.Email.Contains(queryOptions.Search)) ||
+                    (customer.Phone != null && customer.Phone.Contains(queryOptions.Search)));
+            }
+
+            query = queryOptions.SortBy switch
+            {
+                "firstname" => queryOptions.SortDescending
+                    ? query.OrderByDescending(customer => customer.FirstName).ThenBy(customer => customer.Id)
+                    : query.OrderBy(customer => customer.FirstName).ThenBy(customer => customer.Id),
+                "email" => queryOptions.SortDescending
+                    ? query.OrderByDescending(customer => customer.Email).ThenBy(customer => customer.Id)
+                    : query.OrderBy(customer => customer.Email).ThenBy(customer => customer.Id),
+                _ => queryOptions.SortDescending
+                    ? query.OrderByDescending(customer => customer.LastName).ThenBy(customer => customer.Id)
+                    : query.OrderBy(customer => customer.LastName).ThenBy(customer => customer.Id)
+            };
+
+            var totalCount = await query.CountAsync(cancellationToken);
+            var items = await query
+                .Skip(queryOptions.Skip)
+                .Take(queryOptions.PageSize)
+                .ToListAsync(cancellationToken);
+
+            return new PagedResult<CustomerDomain>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = queryOptions.Page,
+                PageSize = queryOptions.PageSize
+            };
+        }
+
+        public async Task<CustomerDomain?> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
             return await _dbContext.Customers
                 .AsNoTracking()
-                .ToListAsync();
+                .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
         }
 
-        public async Task<CustomerDomain?> GetByIdAsync(int id)
+        public async Task<CustomerDomain> CreateAsync(CustomerDomain customer, CancellationToken cancellationToken)
         {
-            return await _dbContext.Customers
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Id == id);
-        }
-
-        public async Task<CustomerDomain> CreateAsync(CustomerDomain customer)
-        {
-            await _dbContext.Customers.AddAsync(customer);
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.Customers.AddAsync(customer, cancellationToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
             return customer;
         }
 
-        public async Task<CustomerDomain?> UpdateAsync(int id, CustomerDomain customer)
+        public async Task<CustomerDomain?> UpdateAsync(int id, CustomerDomain customer, CancellationToken cancellationToken)
         {
-            var existing = await _dbContext.Customers.FirstOrDefaultAsync(c => c.Id == id);
+            var existing = await _dbContext.Customers.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
             if (existing is null) return null;
 
             existing.FirstName = customer.FirstName;
@@ -44,17 +80,17 @@ namespace ProjectBackend.api.Repositories
             existing.Email = customer.Email;
             existing.Phone = customer.Phone;
 
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync(cancellationToken);
             return existing;
         }
 
-        public async Task<CustomerDomain?> DeleteAsync(int id)
+        public async Task<CustomerDomain?> DeleteAsync(int id, CancellationToken cancellationToken)
         {
-            var existing = await _dbContext.Customers.FirstOrDefaultAsync(c => c.Id == id);
+            var existing = await _dbContext.Customers.FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
             if (existing is null) return null;
 
             _dbContext.Customers.Remove(existing);
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync(cancellationToken);
             return existing;
         }
     }

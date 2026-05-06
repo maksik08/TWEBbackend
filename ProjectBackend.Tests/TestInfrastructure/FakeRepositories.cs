@@ -1,4 +1,6 @@
+using ProjectBackend.api.Models.Common;
 using ProjectBackend.api.Models.Domain;
+using ProjectBackend.api.Models.Query;
 using ProjectBackend.api.Repositories;
 
 namespace ProjectBackend.Tests.TestInfrastructure
@@ -7,19 +9,26 @@ namespace ProjectBackend.Tests.TestInfrastructure
     {
         public List<ProductsDomain> Products { get; } = new();
 
-        public Task<List<ProductsDomain>> GetAllAsync() => Task.FromResult(Products);
+        public Task<PagedResult<ProductsDomain>> GetAllAsync(ProductQueryOptions queryOptions, CancellationToken cancellationToken) =>
+            Task.FromResult(new PagedResult<ProductsDomain>
+            {
+                Items = Products,
+                TotalCount = Products.Count,
+                Page = queryOptions.Page,
+                PageSize = queryOptions.PageSize
+            });
 
-        public Task<ProductsDomain?> GetByIdAsync(int id) =>
+        public Task<ProductsDomain?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
             Task.FromResult(Products.FirstOrDefault(product => product.Id == id));
 
-        public Task<ProductsDomain> CreateAsync(ProductsDomain product)
+        public Task<ProductsDomain> CreateAsync(ProductsDomain product, CancellationToken cancellationToken)
         {
             product.Id = Products.Count + 1;
             Products.Add(product);
             return Task.FromResult(product);
         }
 
-        public Task<ProductsDomain?> UpdateAsync(int id, ProductsDomain product)
+        public Task<ProductsDomain?> UpdateAsync(int id, ProductsDomain product, CancellationToken cancellationToken)
         {
             var existing = Products.FirstOrDefault(item => item.Id == id);
             if (existing is null)
@@ -36,7 +45,7 @@ namespace ProjectBackend.Tests.TestInfrastructure
             return Task.FromResult<ProductsDomain?>(existing);
         }
 
-        public Task<ProductsDomain?> DeleteAsync(int id)
+        public Task<ProductsDomain?> DeleteAsync(int id, CancellationToken cancellationToken)
         {
             var existing = Products.FirstOrDefault(item => item.Id == id);
             if (existing is not null)
@@ -53,25 +62,32 @@ namespace ProjectBackend.Tests.TestInfrastructure
         public List<CategoryDomain> Categories { get; } = new();
         public bool HasProductsValue { get; set; }
 
-        public Task<List<CategoryDomain>> GetAllAsync() => Task.FromResult(Categories);
+        public Task<PagedResult<CategoryDomain>> GetAllAsync(CategoryQueryOptions queryOptions, CancellationToken cancellationToken) =>
+            Task.FromResult(new PagedResult<CategoryDomain>
+            {
+                Items = Categories,
+                TotalCount = Categories.Count,
+                Page = queryOptions.Page,
+                PageSize = queryOptions.PageSize
+            });
 
-        public Task<CategoryDomain?> GetByIdAsync(int id) =>
+        public Task<CategoryDomain?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
             Task.FromResult(Categories.FirstOrDefault(category => category.Id == id));
 
-        public Task<bool> ExistsAsync(int id) =>
+        public Task<bool> ExistsAsync(int id, CancellationToken cancellationToken) =>
             Task.FromResult(Categories.Any(category => category.Id == id));
 
-        public Task<bool> HasProductsAsync(int id) =>
+        public Task<bool> HasProductsAsync(int id, CancellationToken cancellationToken) =>
             Task.FromResult(HasProductsValue);
 
-        public Task<CategoryDomain> CreateAsync(CategoryDomain category)
+        public Task<CategoryDomain> CreateAsync(CategoryDomain category, CancellationToken cancellationToken)
         {
             category.Id = Categories.Count + 1;
             Categories.Add(category);
             return Task.FromResult(category);
         }
 
-        public Task<CategoryDomain?> UpdateAsync(int id, CategoryDomain category)
+        public Task<CategoryDomain?> UpdateAsync(int id, CategoryDomain category, CancellationToken cancellationToken)
         {
             var existing = Categories.FirstOrDefault(item => item.Id == id);
             if (existing is null)
@@ -84,7 +100,7 @@ namespace ProjectBackend.Tests.TestInfrastructure
             return Task.FromResult<CategoryDomain?>(existing);
         }
 
-        public Task<CategoryDomain?> DeleteAsync(int id)
+        public Task<CategoryDomain?> DeleteAsync(int id, CancellationToken cancellationToken)
         {
             var existing = Categories.FirstOrDefault(item => item.Id == id);
             if (existing is not null)
@@ -101,25 +117,32 @@ namespace ProjectBackend.Tests.TestInfrastructure
         public List<SupplierDomain> Suppliers { get; } = new();
         public bool HasProductsValue { get; set; }
 
-        public Task<List<SupplierDomain>> GetAllAsync() => Task.FromResult(Suppliers);
+        public Task<PagedResult<SupplierDomain>> GetAllAsync(SupplierQueryOptions queryOptions, CancellationToken cancellationToken) =>
+            Task.FromResult(new PagedResult<SupplierDomain>
+            {
+                Items = Suppliers,
+                TotalCount = Suppliers.Count,
+                Page = queryOptions.Page,
+                PageSize = queryOptions.PageSize
+            });
 
-        public Task<SupplierDomain?> GetByIdAsync(int id) =>
+        public Task<SupplierDomain?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
             Task.FromResult(Suppliers.FirstOrDefault(supplier => supplier.Id == id));
 
-        public Task<bool> ExistsAsync(int id) =>
+        public Task<bool> ExistsAsync(int id, CancellationToken cancellationToken) =>
             Task.FromResult(Suppliers.Any(supplier => supplier.Id == id));
 
-        public Task<bool> HasProductsAsync(int id) =>
+        public Task<bool> HasProductsAsync(int id, CancellationToken cancellationToken) =>
             Task.FromResult(HasProductsValue);
 
-        public Task<SupplierDomain> CreateAsync(SupplierDomain supplier)
+        public Task<SupplierDomain> CreateAsync(SupplierDomain supplier, CancellationToken cancellationToken)
         {
             supplier.Id = Suppliers.Count + 1;
             Suppliers.Add(supplier);
             return Task.FromResult(supplier);
         }
 
-        public Task<SupplierDomain?> UpdateAsync(int id, SupplierDomain supplier)
+        public Task<SupplierDomain?> UpdateAsync(int id, SupplierDomain supplier, CancellationToken cancellationToken)
         {
             var existing = Suppliers.FirstOrDefault(item => item.Id == id);
             if (existing is null)
@@ -133,7 +156,7 @@ namespace ProjectBackend.Tests.TestInfrastructure
             return Task.FromResult<SupplierDomain?>(existing);
         }
 
-        public Task<SupplierDomain?> DeleteAsync(int id)
+        public Task<SupplierDomain?> DeleteAsync(int id, CancellationToken cancellationToken)
         {
             var existing = Suppliers.FirstOrDefault(item => item.Id == id);
             if (existing is not null)
@@ -149,20 +172,26 @@ namespace ProjectBackend.Tests.TestInfrastructure
     {
         public List<UserDomain> Users { get; } = new();
 
-        public Task<List<UserDomain>> GetAllAsync() =>
-            Task.FromResult(Users.OrderByDescending(user => user.CreatedAt).ToList());
+        public Task<PagedResult<UserDomain>> GetAllAsync(UserQueryOptions queryOptions, CancellationToken cancellationToken) =>
+            Task.FromResult(new PagedResult<UserDomain>
+            {
+                Items = Users.OrderByDescending(user => user.CreatedAt).ToList(),
+                TotalCount = Users.Count,
+                Page = queryOptions.Page,
+                PageSize = queryOptions.PageSize
+            });
 
-        public Task<UserDomain?> GetByIdAsync(int id) =>
+        public Task<UserDomain?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
             Task.FromResult(Users.FirstOrDefault(user => user.Id == id));
 
-        public Task<UserDomain> CreateAsync(UserDomain user)
+        public Task<UserDomain> CreateAsync(UserDomain user, CancellationToken cancellationToken)
         {
             user.Id = Users.Count + 1;
             Users.Add(user);
             return Task.FromResult(user);
         }
 
-        public Task<UserDomain?> UpdateAsync(int id, UserDomain user, bool updatePassword)
+        public Task<UserDomain?> UpdateAsync(int id, UserDomain user, bool updatePassword, CancellationToken cancellationToken)
         {
             var existing = Users.FirstOrDefault(item => item.Id == id);
             if (existing is null)
@@ -182,7 +211,7 @@ namespace ProjectBackend.Tests.TestInfrastructure
             return Task.FromResult<UserDomain?>(existing);
         }
 
-        public Task<UserDomain?> DeleteAsync(int id)
+        public Task<UserDomain?> DeleteAsync(int id, CancellationToken cancellationToken)
         {
             var existing = Users.FirstOrDefault(user => user.Id == id);
             if (existing is not null)
@@ -193,15 +222,15 @@ namespace ProjectBackend.Tests.TestInfrastructure
             return Task.FromResult(existing);
         }
 
-        public Task<UserDomain?> GetByUsernameAsync(string username) =>
+        public Task<UserDomain?> GetByUsernameAsync(string username, CancellationToken cancellationToken) =>
             Task.FromResult(Users.FirstOrDefault(user => user.Username == username));
 
-        public Task<bool> ExistsByEmailAsync(string email, int? excludedUserId = null) =>
+        public Task<bool> ExistsByEmailAsync(string email, int? excludedUserId, CancellationToken cancellationToken) =>
             Task.FromResult(Users.Any(user =>
                 user.Email == email &&
                 (!excludedUserId.HasValue || user.Id != excludedUserId.Value)));
 
-        public Task<bool> ExistsByUsernameAsync(string username, int? excludedUserId = null) =>
+        public Task<bool> ExistsByUsernameAsync(string username, int? excludedUserId, CancellationToken cancellationToken) =>
             Task.FromResult(Users.Any(user =>
                 user.Username == username &&
                 (!excludedUserId.HasValue || user.Id != excludedUserId.Value)));

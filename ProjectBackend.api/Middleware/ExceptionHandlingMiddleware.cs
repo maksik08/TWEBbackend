@@ -1,5 +1,6 @@
 using System.Text.Json;
 using ProjectBackend.api.Exceptions;
+using ProjectBackend.api.Models.DTO;
 
 namespace ProjectBackend.api.Middleware
 {
@@ -25,7 +26,7 @@ namespace ProjectBackend.api.Middleware
                 context.Response.ContentType = "application/json";
                 context.Response.StatusCode = ex.StatusCode;
 
-                var payload = JsonSerializer.Serialize(new { message = ex.Message });
+                var payload = JsonSerializer.Serialize(ApiResponse<object?>.Fail(ex.Message));
                 await context.Response.WriteAsync(payload);
             }
             catch (Exception ex)
@@ -35,7 +36,7 @@ namespace ProjectBackend.api.Middleware
                 context.Response.ContentType = "application/json";
                 context.Response.StatusCode = StatusCodes.Status500InternalServerError;
 
-                var payload = JsonSerializer.Serialize(new { message = "An unexpected server error occurred." });
+                var payload = JsonSerializer.Serialize(ApiResponse<object?>.Fail("An unexpected server error occurred."));
                 await context.Response.WriteAsync(payload);
             }
         }

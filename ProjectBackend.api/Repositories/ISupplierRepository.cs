@@ -1,15 +1,17 @@
+using ProjectBackend.api.Models.Common;
 using ProjectBackend.api.Models.Domain;
+using ProjectBackend.api.Models.Query;
 
 namespace ProjectBackend.api.Repositories
 {
     public interface ISupplierRepository
     {
-        Task<List<SupplierDomain>> GetAllAsync();
-        Task<SupplierDomain?> GetByIdAsync(int id);
-        Task<bool> ExistsAsync(int id);
-        Task<bool> HasProductsAsync(int id);
-        Task<SupplierDomain> CreateAsync(SupplierDomain supplier);
-        Task<SupplierDomain?> UpdateAsync(int id, SupplierDomain supplier);
-        Task<SupplierDomain?> DeleteAsync(int id);
+        Task<PagedResult<SupplierDomain>> GetAllAsync(SupplierQueryOptions queryOptions, CancellationToken cancellationToken);
+        Task<SupplierDomain?> GetByIdAsync(int id, CancellationToken cancellationToken);
+        Task<bool> ExistsAsync(int id, CancellationToken cancellationToken);
+        Task<bool> HasProductsAsync(int id, CancellationToken cancellationToken);
+        Task<SupplierDomain> CreateAsync(SupplierDomain supplier, CancellationToken cancellationToken);
+        Task<SupplierDomain?> UpdateAsync(int id, SupplierDomain supplier, CancellationToken cancellationToken);
+        Task<SupplierDomain?> DeleteAsync(int id, CancellationToken cancellationToken);
     }
 }

@@ -31,7 +31,7 @@ namespace ProjectBackend.Tests.Services
                 Role = UserRole.User
             };
 
-            await Assert.ThrowsAsync<ConflictException>(() => service.CreateAsync(dto));
+            await Assert.ThrowsAsync<ConflictException>(() => service.CreateAsync(dto, CancellationToken.None));
         }
 
         [Fact]
@@ -39,7 +39,7 @@ namespace ProjectBackend.Tests.Services
         {
             var service = new UserService(new FakeUserRepository(), TestMapperFactory.Create());
 
-            await Assert.ThrowsAsync<NotFoundException>(() => service.DeleteAsync(42));
+            await Assert.ThrowsAsync<NotFoundException>(() => service.DeleteAsync(42, CancellationToken.None));
         }
     }
 }

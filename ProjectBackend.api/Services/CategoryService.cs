@@ -1,7 +1,9 @@
 using AutoMapper;
 using ProjectBackend.api.Exceptions;
+using ProjectBackend.api.Models.Common;
 using ProjectBackend.api.Models.Domain;
 using ProjectBackend.api.Models.DTO;
+using ProjectBackend.api.Models.Query;
 using ProjectBackend.api.Repositories;
 
 namespace ProjectBackend.api.Services
@@ -17,15 +19,30 @@ namespace ProjectBackend.api.Services
             _mapper = mapper;
         }
 
-        public async Task<List<CategoryDto>> GetAllAsync()
+        public async Task<PagedResult<CategoryDto>> GetAllAsync(CategoryListRequestDto request, CancellationToken cancellationToken)
         {
-            var categories = await _repository.GetAllAsync();
-            return _mapper.Map<List<CategoryDto>>(categories);
+            var queryOptions = new CategoryQueryOptions
+            {
+                Page = QueryValidationHelper.NormalizePage(request.Page),
+                PageSize = QueryValidationHelper.NormalizePageSize(request.PageSize),
+                SortBy = QueryValidationHelper.NormalizeSortBy(request.SortBy, "name", "name", "description"),
+                SortDescending = QueryValidationHelper.NormalizeSortDescending(request.SortDirection),
+                Search = QueryValidationHelper.NormalizeSearch(request.Search)
+            };
+
+            var categories = await _repository.GetAllAsync(queryOptions, cancellationToken);
+            return new PagedResult<CategoryDto>
+            {
+                Items = _mapper.Map<IReadOnlyCollection<CategoryDto>>(categories.Items),
+                TotalCount = categories.TotalCount,
+                Page = categories.Page,
+                PageSize = categories.PageSize
+            };
         }
 
-        public async Task<CategoryDto> GetByIdAsync(int id)
+        public async Task<CategoryDto> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
-            var category = await _repository.GetByIdAsync(id);
+            var category = await _repository.GetByIdAsync(id, cancellationToken);
             if (category is null)
             {
                 throw new NotFoundException($"Category with id {id} was not found.");
@@ -34,17 +51,17 @@ namespace ProjectBackend.api.Services
             return _mapper.Map<CategoryDto>(category);
         }
 
-        public async Task<CategoryDto> CreateAsync(CreateCategoryDto dto)
+        public async Task<CategoryDto> CreateAsync(CreateCategoryDto dto, CancellationToken cancellationToken)
         {
             var entity = _mapper.Map<CategoryDomain>(dto);
-            var created = await _repository.CreateAsync(entity);
+            var created = await _repository.CreateAsync(entity, cancellationToken);
             return _mapper.Map<CategoryDto>(created);
         }
 
-        public async Task<CategoryDto> UpdateAsync(int id, UpdateCategoryDto dto)
+        public async Task<CategoryDto> UpdateAsync(int id, UpdateCategoryDto dto, CancellationToken cancellationToken)
         {
             var entity = _mapper.Map<CategoryDomain>(dto);
-            var updated = await _repository.UpdateAsync(id, entity);
+            var updated = await _repository.UpdateAsync(id, entity, cancellationToken);
             if (updated is null)
             {
                 throw new NotFoundException($"Category with id {id} was not found.");
@@ -53,14 +70,14 @@ namespace ProjectBackend.api.Services
             return _mapper.Map<CategoryDto>(updated);
         }
 
-        public async Task<CategoryDto> DeleteAsync(int id)
+        public async Task<CategoryDto> DeleteAsync(int id, CancellationToken cancellationToken)
         {
-            if (await _repository.HasProductsAsync(id))
+            if (await _repository.HasProductsAsync(id, cancellationToken))
             {
                 throw new ValidationException("The category cannot be deleted because it is used by existing products.");
             }
 
-            var deleted = await _repository.DeleteAsync(id);
+            var deleted = await _repository.DeleteAsync(id, cancellationToken);
             if (deleted is null)
             {
                 throw new NotFoundException($"Category with id {id} was not found.");

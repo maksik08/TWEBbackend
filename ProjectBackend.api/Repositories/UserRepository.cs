@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using ProjectBackend.api.Data;
+using ProjectBackend.api.Models.Common;
 using ProjectBackend.api.Models.Domain;
+using ProjectBackend.api.Models.Query;
 
 namespace ProjectBackend.api.Repositories
 {
@@ -13,31 +15,70 @@ namespace ProjectBackend.api.Repositories
             _dbContext = dbContext;
         }
 
-        public async Task<List<UserDomain>> GetAllAsync()
+        public async Task<PagedResult<UserDomain>> GetAllAsync(UserQueryOptions queryOptions, CancellationToken cancellationToken)
+        {
+            var query = _dbContext.Users.AsNoTracking().AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(queryOptions.Search))
+            {
+                query = query.Where(user =>
+                    user.Username.Contains(queryOptions.Search) ||
+                    user.Email.Contains(queryOptions.Search));
+            }
+
+            if (queryOptions.Role.HasValue)
+            {
+                query = query.Where(user => user.Role == queryOptions.Role.Value);
+            }
+
+            query = queryOptions.SortBy switch
+            {
+                "username" => queryOptions.SortDescending
+                    ? query.OrderByDescending(user => user.Username).ThenBy(user => user.Id)
+                    : query.OrderBy(user => user.Username).ThenBy(user => user.Id),
+                "email" => queryOptions.SortDescending
+                    ? query.OrderByDescending(user => user.Email).ThenBy(user => user.Id)
+                    : query.OrderBy(user => user.Email).ThenBy(user => user.Id),
+                "role" => queryOptions.SortDescending
+                    ? query.OrderByDescending(user => user.Role).ThenBy(user => user.Id)
+                    : query.OrderBy(user => user.Role).ThenBy(user => user.Id),
+                _ => queryOptions.SortDescending
+                    ? query.OrderByDescending(user => user.CreatedAt).ThenBy(user => user.Id)
+                    : query.OrderBy(user => user.CreatedAt).ThenBy(user => user.Id)
+            };
+
+            var totalCount = await query.CountAsync(cancellationToken);
+            var items = await query
+                .Skip(queryOptions.Skip)
+                .Take(queryOptions.PageSize)
+                .ToListAsync(cancellationToken);
+
+            return new PagedResult<UserDomain>
+            {
+                Items = items,
+                TotalCount = totalCount,
+                Page = queryOptions.Page,
+                PageSize = queryOptions.PageSize
+            };
+        }
+
+        public async Task<UserDomain?> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
             return await _dbContext.Users
                 .AsNoTracking()
-                .OrderByDescending(u => u.CreatedAt)
-                .ToListAsync();
+                .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
         }
 
-        public async Task<UserDomain?> GetByIdAsync(int id)
+        public async Task<UserDomain> CreateAsync(UserDomain user, CancellationToken cancellationToken)
         {
-            return await _dbContext.Users
-                .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Id == id);
-        }
-
-        public async Task<UserDomain> CreateAsync(UserDomain user)
-        {
-            await _dbContext.Users.AddAsync(user);
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.Users.AddAsync(user, cancellationToken);
+            await _dbContext.SaveChangesAsync(cancellationToken);
             return user;
         }
 
-        public async Task<UserDomain?> UpdateAsync(int id, UserDomain user, bool updatePassword)
+        public async Task<UserDomain?> UpdateAsync(int id, UserDomain user, bool updatePassword, CancellationToken cancellationToken)
         {
-            var existing = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == id);
+            var existing = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
             if (existing is null)
             {
                 return null;
@@ -52,40 +93,40 @@ namespace ProjectBackend.api.Repositories
                 existing.Password = user.Password;
             }
 
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync(cancellationToken);
             return existing;
         }
 
-        public async Task<UserDomain?> DeleteAsync(int id)
+        public async Task<UserDomain?> DeleteAsync(int id, CancellationToken cancellationToken)
         {
-            var existing = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == id);
+            var existing = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
             if (existing is null)
             {
                 return null;
             }
 
             _dbContext.Users.Remove(existing);
-            await _dbContext.SaveChangesAsync();
+            await _dbContext.SaveChangesAsync(cancellationToken);
             return existing;
         }
 
-        public async Task<UserDomain?> GetByUsernameAsync(string username)
+        public async Task<UserDomain?> GetByUsernameAsync(string username, CancellationToken cancellationToken)
         {
-            return await _dbContext.Users.FirstOrDefaultAsync(u => u.Username == username);
+            return await _dbContext.Users.FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
         }
 
-        public async Task<bool> ExistsByEmailAsync(string email, int? excludedUserId = null)
+        public async Task<bool> ExistsByEmailAsync(string email, int? excludedUserId, CancellationToken cancellationToken)
         {
             return await _dbContext.Users.AnyAsync(u =>
                 u.Email == email &&
-                (!excludedUserId.HasValue || u.Id != excludedUserId.Value));
+                (!excludedUserId.HasValue || u.Id != excludedUserId.Value), cancellationToken);
         }
 
-        public async Task<bool> ExistsByUsernameAsync(string username, int? excludedUserId = null)
+        public async Task<bool> ExistsByUsernameAsync(string username, int? excludedUserId, CancellationToken cancellationToken)
         {
             return await _dbContext.Users.AnyAsync(u =>
                 u.Username == username &&
-                (!excludedUserId.HasValue || u.Id != excludedUserId.Value));
+                (!excludedUserId.HasValue || u.Id != excludedUserId.Value), cancellationToken);
         }
     }
 }

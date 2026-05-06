@@ -1,7 +1,9 @@
 using AutoMapper;
 using ProjectBackend.api.Exceptions;
+using ProjectBackend.api.Models.Common;
 using ProjectBackend.api.Models.Domain;
 using ProjectBackend.api.Models.DTO;
+using ProjectBackend.api.Models.Query;
 using ProjectBackend.api.Repositories;
 
 namespace ProjectBackend.api.Services
@@ -25,15 +27,39 @@ namespace ProjectBackend.api.Services
             _mapper = mapper;
         }
 
-        public async Task<List<ProductDto>> GetAllAsync()
+        public async Task<PagedResult<ProductDto>> GetAllAsync(ProductListRequestDto request, CancellationToken cancellationToken)
         {
-            var products = await _repository.GetAllAsync();
-            return _mapper.Map<List<ProductDto>>(products);
+            if (request.MinPrice.HasValue && request.MaxPrice.HasValue && request.MinPrice > request.MaxPrice)
+            {
+                throw new ValidationException("MinPrice cannot be greater than MaxPrice.");
+            }
+
+            var queryOptions = new ProductQueryOptions
+            {
+                Page = QueryValidationHelper.NormalizePage(request.Page),
+                PageSize = QueryValidationHelper.NormalizePageSize(request.PageSize),
+                SortBy = QueryValidationHelper.NormalizeSortBy(request.SortBy, "name", "name", "title", "price"),
+                SortDescending = QueryValidationHelper.NormalizeSortDescending(request.SortDirection),
+                Search = QueryValidationHelper.NormalizeSearch(request.Search),
+                CategoryId = request.CategoryId,
+                SupplierId = request.SupplierId,
+                MinPrice = request.MinPrice,
+                MaxPrice = request.MaxPrice
+            };
+
+            var products = await _repository.GetAllAsync(queryOptions, cancellationToken);
+            return new PagedResult<ProductDto>
+            {
+                Items = _mapper.Map<IReadOnlyCollection<ProductDto>>(products.Items),
+                TotalCount = products.TotalCount,
+                Page = products.Page,
+                PageSize = products.PageSize
+            };
         }
 
-        public async Task<ProductDto> GetByIdAsync(int id)
+        public async Task<ProductDto> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
-            var product = await _repository.GetByIdAsync(id);
+            var product = await _repository.GetByIdAsync(id, cancellationToken);
             if (product is null)
             {
                 throw new NotFoundException($"Product with id {id} was not found.");
@@ -42,19 +68,19 @@ namespace ProjectBackend.api.Services
             return _mapper.Map<ProductDto>(product);
         }
 
-        public async Task<ProductDto> CreateAsync(CreateProductDto dto)
+        public async Task<ProductDto> CreateAsync(CreateProductDto dto, CancellationToken cancellationToken)
         {
-            await ValidateReferencesAsync(dto.CategoryId, dto.SupplierId);
+            await ValidateReferencesAsync(dto.CategoryId, dto.SupplierId, cancellationToken);
             var entity = _mapper.Map<ProductsDomain>(dto);
-            var created = await _repository.CreateAsync(entity);
+            var created = await _repository.CreateAsync(entity, cancellationToken);
             return _mapper.Map<ProductDto>(created);
         }
 
-        public async Task<ProductDto> UpdateAsync(int id, UpdateProductDto dto)
+        public async Task<ProductDto> UpdateAsync(int id, UpdateProductDto dto, CancellationToken cancellationToken)
         {
-            await ValidateReferencesAsync(dto.CategoryId, dto.SupplierId);
+            await ValidateReferencesAsync(dto.CategoryId, dto.SupplierId, cancellationToken);
             var entity = _mapper.Map<ProductsDomain>(dto);
-            var updated = await _repository.UpdateAsync(id, entity);
+            var updated = await _repository.UpdateAsync(id, entity, cancellationToken);
             if (updated is null)
             {
                 throw new NotFoundException($"Product with id {id} was not found.");
@@ -63,9 +89,9 @@ namespace ProjectBackend.api.Services
             return _mapper.Map<ProductDto>(updated);
         }
 
-        public async Task<ProductDto> DeleteAsync(int id)
+        public async Task<ProductDto> DeleteAsync(int id, CancellationToken cancellationToken)
         {
-            var deleted = await _repository.DeleteAsync(id);
+            var deleted = await _repository.DeleteAsync(id, cancellationToken);
             if (deleted is null)
             {
                 throw new NotFoundException($"Product with id {id} was not found.");
@@ -74,14 +100,14 @@ namespace ProjectBackend.api.Services
             return _mapper.Map<ProductDto>(deleted);
         }
 
-        private async Task ValidateReferencesAsync(int? categoryId, int? supplierId)
+        private async Task ValidateReferencesAsync(int? categoryId, int? supplierId, CancellationToken cancellationToken)
         {
-            if (categoryId.HasValue && !await _categoryRepository.ExistsAsync(categoryId.Value))
+            if (categoryId.HasValue && !await _categoryRepository.ExistsAsync(categoryId.Value, cancellationToken))
             {
                 throw new ValidationException("The selected category does not exist.");
             }
 
-            if (supplierId.HasValue && !await _supplierRepository.ExistsAsync(supplierId.Value))
+            if (supplierId.HasValue && !await _supplierRepository.ExistsAsync(supplierId.Value, cancellationToken))
             {
                 throw new ValidationException("The selected supplier does not exist.");
             }

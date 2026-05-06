@@ -30,7 +30,7 @@ namespace ProjectBackend.Tests.Services
                 SupplierId = 1
             };
 
-            await Assert.ThrowsAsync<ValidationException>(() => service.CreateAsync(dto));
+            await Assert.ThrowsAsync<ValidationException>(() => service.CreateAsync(dto, CancellationToken.None));
         }
 
         [Fact]
@@ -42,7 +42,7 @@ namespace ProjectBackend.Tests.Services
                 new FakeSupplierRepository(),
                 TestMapperFactory.Create());
 
-            await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdAsync(5));
+            await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdAsync(5, CancellationToken.None));
         }
     }
 }

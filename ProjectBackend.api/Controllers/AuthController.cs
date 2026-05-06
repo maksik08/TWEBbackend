@@ -18,18 +18,18 @@ namespace ProjectBackend.api.Controllers
 
         [GuestOnly]
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterDto dto)
+        public async Task<IActionResult> Register([FromBody] RegisterDto dto, CancellationToken cancellationToken)
         {
-            var response = await _authService.RegisterAsync(dto);
-            return Ok(response);
+            var response = await _authService.RegisterAsync(dto, cancellationToken);
+            return Ok(ApiResponse<AuthResponseDto>.Ok(response, "User registered successfully."));
         }
 
         [GuestOnly]
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginDto dto)
+        public async Task<IActionResult> Login([FromBody] LoginDto dto, CancellationToken cancellationToken)
         {
-            var response = await _authService.LoginAsync(dto);
-            return Ok(response);
+            var response = await _authService.LoginAsync(dto, cancellationToken);
+            return Ok(ApiResponse<AuthResponseDto>.Ok(response, "Authentication completed successfully."));
         }
     }
 }

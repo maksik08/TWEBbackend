@@ -1,7 +1,9 @@
 using AutoMapper;
 using ProjectBackend.api.Exceptions;
+using ProjectBackend.api.Models.Common;
 using ProjectBackend.api.Models.Domain;
 using ProjectBackend.api.Models.DTO;
+using ProjectBackend.api.Models.Query;
 using ProjectBackend.api.Repositories;
 
 namespace ProjectBackend.api.Services
@@ -17,15 +19,30 @@ namespace ProjectBackend.api.Services
             _mapper = mapper;
         }
 
-        public async Task<List<CustomerDto>> GetAllAsync()
+        public async Task<PagedResult<CustomerDto>> GetAllAsync(CustomerListRequestDto request, CancellationToken cancellationToken)
         {
-            var customers = await _repository.GetAllAsync();
-            return _mapper.Map<List<CustomerDto>>(customers);
+            var queryOptions = new CustomerQueryOptions
+            {
+                Page = QueryValidationHelper.NormalizePage(request.Page),
+                PageSize = QueryValidationHelper.NormalizePageSize(request.PageSize),
+                SortBy = QueryValidationHelper.NormalizeSortBy(request.SortBy, "lastname", "firstname", "lastname", "email"),
+                SortDescending = QueryValidationHelper.NormalizeSortDescending(request.SortDirection),
+                Search = QueryValidationHelper.NormalizeSearch(request.Search)
+            };
+
+            var customers = await _repository.GetAllAsync(queryOptions, cancellationToken);
+            return new PagedResult<CustomerDto>
+            {
+                Items = _mapper.Map<IReadOnlyCollection<CustomerDto>>(customers.Items),
+                TotalCount = customers.TotalCount,
+                Page = customers.Page,
+                PageSize = customers.PageSize
+            };
         }
 
-        public async Task<CustomerDto> GetByIdAsync(int id)
+        public async Task<CustomerDto> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
-            var customer = await _repository.GetByIdAsync(id);
+            var customer = await _repository.GetByIdAsync(id, cancellationToken);
             if (customer is null)
             {
                 throw new NotFoundException($"Customer with id {id} was not found.");
@@ -34,17 +51,17 @@ namespace ProjectBackend.api.Services
             return _mapper.Map<CustomerDto>(customer);
         }
 
-        public async Task<CustomerDto> CreateAsync(CreateCustomerDto dto)
+        public async Task<CustomerDto> CreateAsync(CreateCustomerDto dto, CancellationToken cancellationToken)
         {
             var entity = _mapper.Map<CustomerDomain>(dto);
-            var created = await _repository.CreateAsync(entity);
+            var created = await _repository.CreateAsync(entity, cancellationToken);
             return _mapper.Map<CustomerDto>(created);
         }
 
-        public async Task<CustomerDto> UpdateAsync(int id, UpdateCustomerDto dto)
+        public async Task<CustomerDto> UpdateAsync(int id, UpdateCustomerDto dto, CancellationToken cancellationToken)
         {
             var entity = _mapper.Map<CustomerDomain>(dto);
-            var updated = await _repository.UpdateAsync(id, entity);
+            var updated = await _repository.UpdateAsync(id, entity, cancellationToken);
             if (updated is null)
             {
                 throw new NotFoundException($"Customer with id {id} was not found.");
@@ -53,9 +70,9 @@ namespace ProjectBackend.api.Services
             return _mapper.Map<CustomerDto>(updated);
         }
 
-        public async Task<CustomerDto> DeleteAsync(int id)
+        public async Task<CustomerDto> DeleteAsync(int id, CancellationToken cancellationToken)
         {
-            var deleted = await _repository.DeleteAsync(id);
+            var deleted = await _repository.DeleteAsync(id, cancellationToken);
             if (deleted is null)
             {
                 throw new NotFoundException($"Customer with id {id} was not found.");

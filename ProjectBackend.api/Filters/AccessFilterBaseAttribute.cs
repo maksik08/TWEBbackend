@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using ProjectBackend.api.Models.Domain;
+using ProjectBackend.api.Models.DTO;
 
 namespace ProjectBackend.api.Filters
 {
@@ -19,7 +20,7 @@ namespace ProjectBackend.api.Filters
 
         protected static ObjectResult BuildResult(int statusCode, string message)
         {
-            return new ObjectResult(new { message }) { StatusCode = statusCode };
+            return new ObjectResult(ApiResponse<object?>.Fail(message)) { StatusCode = statusCode };
         }
 
         protected static bool HasAnyRole(string? role, params UserRole[] roles)
