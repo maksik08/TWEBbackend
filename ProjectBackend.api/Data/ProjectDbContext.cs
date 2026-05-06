@@ -12,6 +12,8 @@ namespace ProjectBackend.api.Data
         public DbSet<SupplierDomain> Suppliers { get; set; }
         public DbSet<CustomerDomain> Customers { get; set; }
         public DbSet<UserDomain> Users { get; set; }
+        public DbSet<OrderDomain> Orders { get; set; }
+        public DbSet<OrderItemDomain> OrderItems { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -87,6 +89,39 @@ namespace ProjectBackend.api.Data
                 entity.Property(u => u.UpdatedAt).HasColumnType("datetime2");
                 entity.HasIndex(u => u.Email).IsUnique();
                 entity.HasIndex(u => u.Username).IsUnique();
+            });
+
+            modelBuilder.Entity<OrderDomain>(entity =>
+            {
+                entity.Property(o => o.Status).HasConversion<string>().HasMaxLength(50);
+                entity.Property(o => o.Subtotal).HasColumnType("decimal(18,2)");
+                entity.Property(o => o.CreatedAt).HasColumnType("datetime2");
+                entity.Property(o => o.UpdatedAt).HasColumnType("datetime2");
+                entity.Property(o => o.PaidAt).HasColumnType("datetime2");
+
+                entity.HasOne(o => o.User)
+                    .WithMany()
+                    .HasForeignKey(o => o.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasMany(o => o.Items)
+                    .WithOne(i => i.Order)
+                    .HasForeignKey(i => i.OrderId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(o => o.UserId);
+                entity.HasIndex(o => o.Status);
+            });
+
+            modelBuilder.Entity<OrderItemDomain>(entity =>
+            {
+                entity.Property(i => i.ProductName).HasMaxLength(200);
+                entity.Property(i => i.UnitPrice).HasColumnType("decimal(18,2)");
+
+                entity.HasOne(i => i.Product)
+                    .WithMany()
+                    .HasForeignKey(i => i.ProductId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             base.OnModelCreating(modelBuilder);

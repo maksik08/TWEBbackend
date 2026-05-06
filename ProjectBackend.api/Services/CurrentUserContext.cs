@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using ProjectBackend.api.Models.Domain;
 
 namespace ProjectBackend.api.Services
 {
@@ -17,6 +18,15 @@ namespace ProjectBackend.api.Services
             {
                 var claimValue = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
                 return int.TryParse(claimValue, out var userId) ? userId : null;
+            }
+        }
+
+        public UserRole? Role
+        {
+            get
+            {
+                var claimValue = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.Role);
+                return Enum.TryParse<UserRole>(claimValue, ignoreCase: true, out var role) ? role : null;
             }
         }
     }

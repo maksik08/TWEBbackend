@@ -36,6 +36,12 @@ namespace ProjectBackend.api.Mappings
                 .ForMember(dest => dest.Password, opt => opt.Ignore());
             CreateMap<UpdateUserDto, UserDomain>()
                 .ForMember(dest => dest.Password, opt => opt.Ignore());
+
+            CreateMap<OrderItemDomain, OrderItemDto>()
+                .ForMember(dest => dest.LineTotal, opt => opt.MapFrom(src => src.UnitPrice * src.Quantity));
+
+            CreateMap<OrderDomain, OrderDto>()
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? src.User.Username : null));
         }
     }
 }
