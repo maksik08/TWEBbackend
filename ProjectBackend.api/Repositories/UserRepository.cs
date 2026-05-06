@@ -47,19 +47,7 @@ namespace ProjectBackend.api.Repositories
                     : query.OrderBy(user => user.CreatedAt).ThenBy(user => user.Id)
             };
 
-            var totalCount = await query.CountAsync(cancellationToken);
-            var items = await query
-                .Skip(queryOptions.Skip)
-                .Take(queryOptions.PageSize)
-                .ToListAsync(cancellationToken);
-
-            return new PagedResult<UserDomain>
-            {
-                Items = items,
-                TotalCount = totalCount,
-                Page = queryOptions.Page,
-                PageSize = queryOptions.PageSize
-            };
+            return await query.ToPagedResultAsync(queryOptions, cancellationToken);
         }
 
         public async Task<UserDomain?> GetByIdAsync(int id, CancellationToken cancellationToken)
@@ -112,7 +100,14 @@ namespace ProjectBackend.api.Repositories
 
         public async Task<UserDomain?> GetByUsernameAsync(string username, CancellationToken cancellationToken)
         {
-            return await _dbContext.Users.FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
+            return await _dbContext.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
+        }
+
+        public async Task<int> CountByRoleAsync(UserRole role, CancellationToken cancellationToken)
+        {
+            return await _dbContext.Users.CountAsync(u => u.Role == role, cancellationToken);
         }
 
         public async Task<bool> ExistsByEmailAsync(string email, int? excludedUserId, CancellationToken cancellationToken)

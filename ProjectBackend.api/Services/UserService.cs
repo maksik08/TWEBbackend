@@ -8,15 +8,17 @@ using ProjectBackend.api.Repositories;
 
 namespace ProjectBackend.api.Services
 {
-    public class UserService : IUserService
+    public class UserService : ApplicationServiceBase, IUserService
     {
         private readonly IUserRepository _repository;
         private readonly IMapper _mapper;
+        private readonly ICurrentUserContext _currentUserContext;
 
-        public UserService(IUserRepository repository, IMapper mapper)
+        public UserService(IUserRepository repository, IMapper mapper, ICurrentUserContext currentUserContext)
         {
             _repository = repository;
             _mapper = mapper;
+            _currentUserContext = currentUserContext;
         }
 
         public async Task<PagedResult<UserDto>> GetAllAsync(UserListRequestDto request, CancellationToken cancellationToken)
@@ -43,20 +45,19 @@ namespace ProjectBackend.api.Services
 
         public async Task<UserDto> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
-            var user = await _repository.GetByIdAsync(id, cancellationToken);
-            if (user is null)
-            {
-                throw new NotFoundException($"User with id {id} was not found.");
-            }
-
+            var user = EnsureFound(await _repository.GetByIdAsync(id, cancellationToken), "User", id);
             return _mapper.Map<UserDto>(user);
         }
 
         public async Task<UserDto> CreateAsync(CreateUserDto dto, CancellationToken cancellationToken)
         {
-            await EnsureUniqueCredentialsAsync(dto.Email, dto.Username, null, cancellationToken);
+            var email = NormalizeEmail(dto.Email);
+            var username = NormalizeRequiredText(dto.Username, "Username");
+            await EnsureUniqueCredentialsAsync(email, username, null, cancellationToken);
 
             var entity = _mapper.Map<UserDomain>(dto);
+            entity.Email = email;
+            entity.Username = username;
             entity.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password);
 
             var created = await _repository.CreateAsync(entity, cancellationToken);
@@ -65,9 +66,20 @@ namespace ProjectBackend.api.Services
 
         public async Task<UserDto> UpdateAsync(int id, UpdateUserDto dto, CancellationToken cancellationToken)
         {
-            await EnsureUniqueCredentialsAsync(dto.Email, dto.Username, id, cancellationToken);
+            var existingUser = EnsureFound(await _repository.GetByIdAsync(id, cancellationToken), "User", id);
+            var email = NormalizeEmail(dto.Email);
+            var username = NormalizeRequiredText(dto.Username, "Username");
+
+            await EnsureUniqueCredentialsAsync(email, username, id, cancellationToken);
+
+            if (_currentUserContext.UserId == id && existingUser.Role != dto.Role)
+            {
+                throw new ValidationException("You cannot change your own role.");
+            }
 
             var entity = _mapper.Map<UserDomain>(dto);
+            entity.Email = email;
+            entity.Username = username;
             var updatePassword = !string.IsNullOrWhiteSpace(dto.Password);
             if (updatePassword)
             {
@@ -75,22 +87,24 @@ namespace ProjectBackend.api.Services
             }
 
             var updated = await _repository.UpdateAsync(id, entity, updatePassword, cancellationToken);
-            if (updated is null)
-            {
-                throw new NotFoundException($"User with id {id} was not found.");
-            }
-
+            updated = EnsureFound(updated, "User", id);
             return _mapper.Map<UserDto>(updated);
         }
 
         public async Task<UserDto> DeleteAsync(int id, CancellationToken cancellationToken)
         {
-            var deleted = await _repository.DeleteAsync(id, cancellationToken);
-            if (deleted is null)
+            var user = EnsureFound(await _repository.GetByIdAsync(id, cancellationToken), "User", id);
+
+            if (user.Role == UserRole.Admin)
             {
-                throw new NotFoundException($"User with id {id} was not found.");
+                var adminCount = await _repository.CountByRoleAsync(UserRole.Admin, cancellationToken);
+                if (adminCount <= 1)
+                {
+                    throw new ValidationException("The last administrator cannot be deleted.");
+                }
             }
 
+            var deleted = EnsureFound(await _repository.DeleteAsync(id, cancellationToken), "User", id);
             return _mapper.Map<UserDto>(deleted);
         }
 

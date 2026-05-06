@@ -1,6 +1,6 @@
 namespace ProjectBackend.api.Models.DTO
 {
-    public class SupplierDto
+    public class SupplierDto : AuditableDto
     {
         public int Id { get; set; }
         public string Name { get; set; } = string.Empty;

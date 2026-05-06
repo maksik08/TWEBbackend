@@ -5,6 +5,11 @@ using ProjectBackend.api.Services;
 
 namespace ProjectBackend.api.Controllers
 {
+    /// <summary>
+    /// Customer endpoints.
+    /// Read access: authenticated user or admin.
+    /// Write access: admin.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     [UserAccess]
@@ -17,6 +22,9 @@ namespace ProjectBackend.api.Controllers
             _customerService = customerService;
         }
 
+        /// <summary>
+        /// Returns a paged customer list with filtering and sorting.
+        /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] CustomerListRequestDto request, CancellationToken cancellationToken)
         {

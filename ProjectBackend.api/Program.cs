@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json.Serialization;
+using System.Reflection;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -34,6 +35,13 @@ builder.Services.AddControllers()
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
+    }
+
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -91,6 +99,8 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUserContext, CurrentUserContext>();
 
 builder.Services.AddAutoMapper(_ => { }, typeof(AutoMapperProfile));
 

@@ -5,6 +5,11 @@ using ProjectBackend.api.Services;
 
 namespace ProjectBackend.api.Controllers
 {
+    /// <summary>
+    /// Product catalog endpoints.
+    /// Read access: guest.
+    /// Write access: admin.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class ProductsController : ControllerBase
@@ -16,6 +21,10 @@ namespace ProjectBackend.api.Controllers
             _productService = productService;
         }
 
+        /// <summary>
+        /// Returns a paged product list with filtering and sorting.
+        /// Example query: page=1&amp;pageSize=10&amp;sortBy=price&amp;sortDirection=desc.
+        /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] ProductListRequestDto request, CancellationToken cancellationToken)
         {
@@ -23,6 +32,9 @@ namespace ProjectBackend.api.Controllers
             return Ok(PagedResponse<ProductDto>.Ok(products));
         }
 
+        /// <summary>
+        /// Returns one product by identifier.
+        /// </summary>
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById([FromRoute] int id, CancellationToken cancellationToken)
         {

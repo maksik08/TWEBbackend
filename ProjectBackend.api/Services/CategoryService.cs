@@ -8,7 +8,7 @@ using ProjectBackend.api.Repositories;
 
 namespace ProjectBackend.api.Services
 {
-    public class CategoryService : ICategoryService
+    public class CategoryService : ApplicationServiceBase, ICategoryService
     {
         private readonly ICategoryRepository _repository;
         private readonly IMapper _mapper;
@@ -42,31 +42,42 @@ namespace ProjectBackend.api.Services
 
         public async Task<CategoryDto> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
-            var category = await _repository.GetByIdAsync(id, cancellationToken);
-            if (category is null)
-            {
-                throw new NotFoundException($"Category with id {id} was not found.");
-            }
-
+            var category = EnsureFound(await _repository.GetByIdAsync(id, cancellationToken), "Category", id);
             return _mapper.Map<CategoryDto>(category);
         }
 
         public async Task<CategoryDto> CreateAsync(CreateCategoryDto dto, CancellationToken cancellationToken)
         {
+            var normalizedName = NormalizeRequiredText(dto.Name, "Category name");
+            var description = NormalizeOptionalText(dto.Description);
+
+            if (await _repository.ExistsByNameAsync(normalizedName, null, cancellationToken))
+            {
+                throw new ConflictException("A category with this name already exists.");
+            }
+
             var entity = _mapper.Map<CategoryDomain>(dto);
+            entity.Name = normalizedName;
+            entity.Description = description;
             var created = await _repository.CreateAsync(entity, cancellationToken);
             return _mapper.Map<CategoryDto>(created);
         }
 
         public async Task<CategoryDto> UpdateAsync(int id, UpdateCategoryDto dto, CancellationToken cancellationToken)
         {
-            var entity = _mapper.Map<CategoryDomain>(dto);
-            var updated = await _repository.UpdateAsync(id, entity, cancellationToken);
-            if (updated is null)
+            var normalizedName = NormalizeRequiredText(dto.Name, "Category name");
+            var description = NormalizeOptionalText(dto.Description);
+
+            if (await _repository.ExistsByNameAsync(normalizedName, id, cancellationToken))
             {
-                throw new NotFoundException($"Category with id {id} was not found.");
+                throw new ConflictException("A category with this name already exists.");
             }
 
+            var entity = _mapper.Map<CategoryDomain>(dto);
+            entity.Name = normalizedName;
+            entity.Description = description;
+            var updated = await _repository.UpdateAsync(id, entity, cancellationToken);
+            updated = EnsureFound(updated, "Category", id);
             return _mapper.Map<CategoryDto>(updated);
         }
 
@@ -77,12 +88,7 @@ namespace ProjectBackend.api.Services
                 throw new ValidationException("The category cannot be deleted because it is used by existing products.");
             }
 
-            var deleted = await _repository.DeleteAsync(id, cancellationToken);
-            if (deleted is null)
-            {
-                throw new NotFoundException($"Category with id {id} was not found.");
-            }
-
+            var deleted = EnsureFound(await _repository.DeleteAsync(id, cancellationToken), "Category", id);
             return _mapper.Map<CategoryDto>(deleted);
         }
     }

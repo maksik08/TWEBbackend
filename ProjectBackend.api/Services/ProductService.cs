@@ -8,7 +8,7 @@ using ProjectBackend.api.Repositories;
 
 namespace ProjectBackend.api.Services
 {
-    public class ProductService : IProductService
+    public class ProductService : ApplicationServiceBase, IProductService
     {
         private readonly IProductRepository _repository;
         private readonly ICategoryRepository _categoryRepository;
@@ -59,19 +59,19 @@ namespace ProjectBackend.api.Services
 
         public async Task<ProductDto> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
-            var product = await _repository.GetByIdAsync(id, cancellationToken);
-            if (product is null)
-            {
-                throw new NotFoundException($"Product with id {id} was not found.");
-            }
-
+            var product = EnsureFound(await _repository.GetByIdAsync(id, cancellationToken), "Product", id);
             return _mapper.Map<ProductDto>(product);
         }
 
         public async Task<ProductDto> CreateAsync(CreateProductDto dto, CancellationToken cancellationToken)
         {
             await ValidateReferencesAsync(dto.CategoryId, dto.SupplierId, cancellationToken);
+            var normalizedName = NormalizeRequiredText(dto.Name, "Product name");
+            EnsureMinimumValue(dto.Price, 0.01m, "Price");
             var entity = _mapper.Map<ProductsDomain>(dto);
+            entity.Name = normalizedName;
+            entity.Title = NormalizeOptionalText(dto.Title);
+            entity.Image = NormalizeOptionalText(dto.Image);
             var created = await _repository.CreateAsync(entity, cancellationToken);
             return _mapper.Map<ProductDto>(created);
         }
@@ -79,24 +79,20 @@ namespace ProjectBackend.api.Services
         public async Task<ProductDto> UpdateAsync(int id, UpdateProductDto dto, CancellationToken cancellationToken)
         {
             await ValidateReferencesAsync(dto.CategoryId, dto.SupplierId, cancellationToken);
+            var normalizedName = NormalizeRequiredText(dto.Name, "Product name");
+            EnsureMinimumValue(dto.Price, 0.01m, "Price");
             var entity = _mapper.Map<ProductsDomain>(dto);
+            entity.Name = normalizedName;
+            entity.Title = NormalizeOptionalText(dto.Title);
+            entity.Image = NormalizeOptionalText(dto.Image);
             var updated = await _repository.UpdateAsync(id, entity, cancellationToken);
-            if (updated is null)
-            {
-                throw new NotFoundException($"Product with id {id} was not found.");
-            }
-
+            updated = EnsureFound(updated, "Product", id);
             return _mapper.Map<ProductDto>(updated);
         }
 
         public async Task<ProductDto> DeleteAsync(int id, CancellationToken cancellationToken)
         {
-            var deleted = await _repository.DeleteAsync(id, cancellationToken);
-            if (deleted is null)
-            {
-                throw new NotFoundException($"Product with id {id} was not found.");
-            }
-
+            var deleted = EnsureFound(await _repository.DeleteAsync(id, cancellationToken), "Product", id);
             return _mapper.Map<ProductDto>(deleted);
         }
 

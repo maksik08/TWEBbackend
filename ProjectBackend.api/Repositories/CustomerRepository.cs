@@ -41,19 +41,7 @@ namespace ProjectBackend.api.Repositories
                     : query.OrderBy(customer => customer.LastName).ThenBy(customer => customer.Id)
             };
 
-            var totalCount = await query.CountAsync(cancellationToken);
-            var items = await query
-                .Skip(queryOptions.Skip)
-                .Take(queryOptions.PageSize)
-                .ToListAsync(cancellationToken);
-
-            return new PagedResult<CustomerDomain>
-            {
-                Items = items,
-                TotalCount = totalCount,
-                Page = queryOptions.Page,
-                PageSize = queryOptions.PageSize
-            };
+            return await query.ToPagedResultAsync(queryOptions, cancellationToken);
         }
 
         public async Task<CustomerDomain?> GetByIdAsync(int id, CancellationToken cancellationToken)

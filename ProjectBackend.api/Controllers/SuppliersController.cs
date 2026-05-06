@@ -5,6 +5,11 @@ using ProjectBackend.api.Services;
 
 namespace ProjectBackend.api.Controllers
 {
+    /// <summary>
+    /// Supplier endpoints.
+    /// Read access: authenticated user or admin.
+    /// Write access: admin.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     [UserAccess]
@@ -17,6 +22,9 @@ namespace ProjectBackend.api.Controllers
             _supplierService = supplierService;
         }
 
+        /// <summary>
+        /// Returns a paged supplier list with filtering and sorting.
+        /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] SupplierListRequestDto request, CancellationToken cancellationToken)
         {

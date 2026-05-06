@@ -1,4 +1,3 @@
-using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using ProjectBackend.api.Filters;
 using ProjectBackend.api.Models.DTO;
@@ -6,6 +5,10 @@ using ProjectBackend.api.Services;
 
 namespace ProjectBackend.api.Controllers
 {
+    /// <summary>
+    /// Administrative operations for user management.
+    /// Access: admin only for every endpoint in this controller.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     [UserAccess]
@@ -18,19 +21,10 @@ namespace ProjectBackend.api.Controllers
             _userService = userService;
         }
 
-        [HttpGet("me")]
-        public async Task<IActionResult> GetCurrentUser(CancellationToken cancellationToken)
-        {
-            var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!int.TryParse(userIdClaim, out var userId))
-            {
-                return Unauthorized(ApiResponse<object?>.Fail("Invalid user identity."));
-            }
-
-            var user = await _userService.GetByIdAsync(userId, cancellationToken);
-            return Ok(ApiResponse<UserDto>.Ok(user));
-        }
-
+        /// <summary>
+        /// Returns a paged list of users.
+        /// Access: admin.
+        /// </summary>
         [AdminMod]
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] UserListRequestDto request, CancellationToken cancellationToken)
@@ -39,7 +33,11 @@ namespace ProjectBackend.api.Controllers
             return Ok(PagedResponse<UserDto>.Ok(users));
         }
 
-        [OwnerOrAdmin]
+        /// <summary>
+        /// Returns one user by identifier.
+        /// Access: admin.
+        /// </summary>
+        [AdminMod]
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById([FromRoute] int id, CancellationToken cancellationToken)
         {
@@ -47,6 +45,10 @@ namespace ProjectBackend.api.Controllers
             return Ok(ApiResponse<UserDto>.Ok(user));
         }
 
+        /// <summary>
+        /// Creates a user.
+        /// Access: admin.
+        /// </summary>
         [AdminMod]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateUserDto dto, CancellationToken cancellationToken)
@@ -55,6 +57,10 @@ namespace ProjectBackend.api.Controllers
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, ApiResponse<UserDto>.Ok(created, "User created successfully."));
         }
 
+        /// <summary>
+        /// Updates a user.
+        /// Access: admin.
+        /// </summary>
         [AdminMod]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> Update([FromRoute] int id, [FromBody] UpdateUserDto dto, CancellationToken cancellationToken)
@@ -63,7 +69,11 @@ namespace ProjectBackend.api.Controllers
             return Ok(ApiResponse<UserDto>.Ok(updated, "User updated successfully."));
         }
 
-        [OwnerOrAdmin]
+        /// <summary>
+        /// Deletes a user.
+        /// Access: admin.
+        /// </summary>
+        [AdminMod]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken cancellationToken)
         {

@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ProjectBackend.api.Models.Domain
 {
-    public class UserDomain
+    public class UserDomain : AuditableEntity
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -16,8 +16,5 @@ namespace ProjectBackend.api.Models.Domain
         public required string Password { get; set; }
 
         public UserRole Role { get; set; } = UserRole.Customer;
-
-
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

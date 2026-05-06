@@ -6,7 +6,7 @@ using ProjectBackend.api.Repositories;
 
 namespace ProjectBackend.api.Services
 {
-    public class AuthService : IAuthService
+    public class AuthService : ApplicationServiceBase, IAuthService
     {
         private readonly IUserRepository _repository;
         private readonly ITokenService _tokenService;
@@ -21,20 +21,23 @@ namespace ProjectBackend.api.Services
 
         public async Task<AuthResponseDto> RegisterAsync(RegisterDto dto, CancellationToken cancellationToken)
         {
-            if (await _repository.ExistsByEmailAsync(dto.Email, null, cancellationToken))
+            var email = NormalizeEmail(dto.Email);
+            var username = NormalizeRequiredText(dto.Username, "Username");
+
+            if (await _repository.ExistsByEmailAsync(email, null, cancellationToken))
             {
                 throw new ConflictException("Email is already registered.");
             }
 
-            if (await _repository.ExistsByUsernameAsync(dto.Username, null, cancellationToken))
+            if (await _repository.ExistsByUsernameAsync(username, null, cancellationToken))
             {
                 throw new ConflictException("Username is already taken.");
             }
 
             var entity = new UserDomain
             {
-                Email = dto.Email,
-                Username = dto.Username,
+                Email = email,
+                Username = username,
                 Password = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 Role = UserRole.User
             };
@@ -45,7 +48,8 @@ namespace ProjectBackend.api.Services
 
         public async Task<AuthResponseDto> LoginAsync(LoginDto dto, CancellationToken cancellationToken)
         {
-            var user = await _repository.GetByUsernameAsync(dto.Username, cancellationToken);
+            var username = NormalizeRequiredText(dto.Username, "Username");
+            var user = await _repository.GetByUsernameAsync(username, cancellationToken);
             if (user is null || !BCrypt.Net.BCrypt.Verify(dto.Password, user.Password))
             {
                 throw new UnauthorizedAppException("Invalid username or password.");

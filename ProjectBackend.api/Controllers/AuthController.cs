@@ -5,6 +5,10 @@ using ProjectBackend.api.Services;
 
 namespace ProjectBackend.api.Controllers
 {
+    /// <summary>
+    /// Authentication endpoints for guests.
+    /// Access: guest only.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class AuthController : ControllerBase
@@ -16,6 +20,10 @@ namespace ProjectBackend.api.Controllers
             _authService = authService;
         }
 
+        /// <summary>
+        /// Registers a new user account.
+        /// Access: guest.
+        /// </summary>
         [GuestOnly]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto, CancellationToken cancellationToken)
@@ -24,6 +32,10 @@ namespace ProjectBackend.api.Controllers
             return Ok(ApiResponse<AuthResponseDto>.Ok(response, "User registered successfully."));
         }
 
+        /// <summary>
+        /// Authenticates a user and returns a JWT token.
+        /// Access: guest.
+        /// </summary>
         [GuestOnly]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto, CancellationToken cancellationToken)

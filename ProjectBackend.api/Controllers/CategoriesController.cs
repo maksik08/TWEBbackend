@@ -5,6 +5,11 @@ using ProjectBackend.api.Services;
 
 namespace ProjectBackend.api.Controllers
 {
+    /// <summary>
+    /// Category endpoints.
+    /// Read access: authenticated user or admin.
+    /// Write access: admin.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     [UserAccess]
@@ -17,6 +22,9 @@ namespace ProjectBackend.api.Controllers
             _categoryService = categoryService;
         }
 
+        /// <summary>
+        /// Returns a paged category list with filtering and sorting.
+        /// </summary>
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] CategoryListRequestDto request, CancellationToken cancellationToken)
         {

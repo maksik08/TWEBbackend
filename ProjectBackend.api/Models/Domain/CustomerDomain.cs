@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ProjectBackend.api.Models.Domain
 {
-    public class CustomerDomain
+    public class CustomerDomain : AuditableEntity
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]

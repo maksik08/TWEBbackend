@@ -12,6 +12,7 @@ namespace ProjectBackend.api.Repositories
         Task<UserDomain?> UpdateAsync(int id, UserDomain user, bool updatePassword, CancellationToken cancellationToken);
         Task<UserDomain?> DeleteAsync(int id, CancellationToken cancellationToken);
         Task<UserDomain?> GetByUsernameAsync(string username, CancellationToken cancellationToken);
+        Task<int> CountByRoleAsync(UserRole role, CancellationToken cancellationToken);
         Task<bool> ExistsByEmailAsync(string email, int? excludedUserId, CancellationToken cancellationToken);
         Task<bool> ExistsByUsernameAsync(string username, int? excludedUserId, CancellationToken cancellationToken);
     }

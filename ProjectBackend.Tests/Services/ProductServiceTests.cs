@@ -44,5 +44,55 @@ namespace ProjectBackend.Tests.Services
 
             await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdAsync(5, CancellationToken.None));
         }
+
+        [Fact]
+        public async Task CreateAsync_ShouldThrowValidationException_WhenNameIsBlankAfterNormalization()
+        {
+            var categoryRepository = new FakeCategoryRepository();
+            var supplierRepository = new FakeSupplierRepository();
+            categoryRepository.Categories.Add(new CategoryDomain { Id = 1, Name = "Hardware" });
+            supplierRepository.Suppliers.Add(new SupplierDomain { Id = 1, Name = "Supplier" });
+
+            var service = new ProductService(
+                new FakeProductRepository(),
+                categoryRepository,
+                supplierRepository,
+                TestMapperFactory.Create());
+
+            var dto = new CreateProductDto
+            {
+                Name = "   ",
+                Price = 10,
+                CategoryId = 1,
+                SupplierId = 1
+            };
+
+            await Assert.ThrowsAsync<ValidationException>(() => service.CreateAsync(dto, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task CreateAsync_ShouldThrowValidationException_WhenPriceIsTooSmall()
+        {
+            var categoryRepository = new FakeCategoryRepository();
+            var supplierRepository = new FakeSupplierRepository();
+            categoryRepository.Categories.Add(new CategoryDomain { Id = 1, Name = "Hardware" });
+            supplierRepository.Suppliers.Add(new SupplierDomain { Id = 1, Name = "Supplier" });
+
+            var service = new ProductService(
+                new FakeProductRepository(),
+                categoryRepository,
+                supplierRepository,
+                TestMapperFactory.Create());
+
+            var dto = new CreateProductDto
+            {
+                Name = "Notebook",
+                Price = 0,
+                CategoryId = 1,
+                SupplierId = 1
+            };
+
+            await Assert.ThrowsAsync<ValidationException>(() => service.CreateAsync(dto, CancellationToken.None));
+        }
     }
 }

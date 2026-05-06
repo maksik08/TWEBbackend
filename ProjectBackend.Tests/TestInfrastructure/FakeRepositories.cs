@@ -2,6 +2,7 @@ using ProjectBackend.api.Models.Common;
 using ProjectBackend.api.Models.Domain;
 using ProjectBackend.api.Models.Query;
 using ProjectBackend.api.Repositories;
+using ProjectBackend.api.Services;
 
 namespace ProjectBackend.Tests.TestInfrastructure
 {
@@ -77,6 +78,11 @@ namespace ProjectBackend.Tests.TestInfrastructure
         public Task<bool> ExistsAsync(int id, CancellationToken cancellationToken) =>
             Task.FromResult(Categories.Any(category => category.Id == id));
 
+        public Task<bool> ExistsByNameAsync(string name, int? excludedId, CancellationToken cancellationToken) =>
+            Task.FromResult(Categories.Any(category =>
+                category.Name == name &&
+                (!excludedId.HasValue || category.Id != excludedId.Value)));
+
         public Task<bool> HasProductsAsync(int id, CancellationToken cancellationToken) =>
             Task.FromResult(HasProductsValue);
 
@@ -131,6 +137,16 @@ namespace ProjectBackend.Tests.TestInfrastructure
 
         public Task<bool> ExistsAsync(int id, CancellationToken cancellationToken) =>
             Task.FromResult(Suppliers.Any(supplier => supplier.Id == id));
+
+        public Task<bool> ExistsByNameAsync(string name, int? excludedId, CancellationToken cancellationToken) =>
+            Task.FromResult(Suppliers.Any(supplier =>
+                supplier.Name == name &&
+                (!excludedId.HasValue || supplier.Id != excludedId.Value)));
+
+        public Task<bool> ExistsByContactEmailAsync(string email, int? excludedId, CancellationToken cancellationToken) =>
+            Task.FromResult(Suppliers.Any(supplier =>
+                supplier.ContactEmail == email &&
+                (!excludedId.HasValue || supplier.Id != excludedId.Value)));
 
         public Task<bool> HasProductsAsync(int id, CancellationToken cancellationToken) =>
             Task.FromResult(HasProductsValue);
@@ -225,6 +241,9 @@ namespace ProjectBackend.Tests.TestInfrastructure
         public Task<UserDomain?> GetByUsernameAsync(string username, CancellationToken cancellationToken) =>
             Task.FromResult(Users.FirstOrDefault(user => user.Username == username));
 
+        public Task<int> CountByRoleAsync(UserRole role, CancellationToken cancellationToken) =>
+            Task.FromResult(Users.Count(user => user.Role == role));
+
         public Task<bool> ExistsByEmailAsync(string email, int? excludedUserId, CancellationToken cancellationToken) =>
             Task.FromResult(Users.Any(user =>
                 user.Email == email &&
@@ -234,5 +253,10 @@ namespace ProjectBackend.Tests.TestInfrastructure
             Task.FromResult(Users.Any(user =>
                 user.Username == username &&
                 (!excludedUserId.HasValue || user.Id != excludedUserId.Value)));
+    }
+
+    internal sealed class FakeCurrentUserContext : ICurrentUserContext
+    {
+        public int? UserId { get; init; }
     }
 }
