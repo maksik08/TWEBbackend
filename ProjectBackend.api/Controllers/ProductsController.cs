@@ -14,11 +14,15 @@ namespace ProjectBackend.api.Controllers
     [ApiController]
     public class ProductsController : ControllerBase
     {
-        private readonly IProductService _productService;
+        private const long MaxImageUploadSize = 5 * 1024 * 1024;
 
-        public ProductsController(IProductService productService)
+        private readonly IProductService _productService;
+        private readonly IImageStorageService _imageStorageService;
+
+        public ProductsController(IProductService productService, IImageStorageService imageStorageService)
         {
             _productService = productService;
+            _imageStorageService = imageStorageService;
         }
 
         /// <summary>
@@ -64,6 +68,21 @@ namespace ProjectBackend.api.Controllers
         {
             var deleted = await _productService.DeleteAsync(id, cancellationToken);
             return Ok(ApiResponse<ProductDto>.Ok(deleted, "Product deleted successfully."));
+        }
+
+        /// <summary>
+        /// Uploads a product image and returns its public relative URL.
+        /// </summary>
+        [AdminMod]
+        [HttpPost("upload-image")]
+        [RequestSizeLimit(MaxImageUploadSize)]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UploadImage([FromForm] UploadImageRequestDto request, CancellationToken cancellationToken)
+        {
+            var url = await _imageStorageService.SaveProductImageAsync(request.File, cancellationToken);
+            return Ok(ApiResponse<UploadImageResponseDto>.Ok(
+                new UploadImageResponseDto { Url = url },
+                "Image uploaded successfully."));
         }
     }
 }

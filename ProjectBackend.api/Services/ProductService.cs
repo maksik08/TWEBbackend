@@ -13,17 +13,20 @@ namespace ProjectBackend.api.Services
         private readonly IProductRepository _repository;
         private readonly ICategoryRepository _categoryRepository;
         private readonly ISupplierRepository _supplierRepository;
+        private readonly IImageStorageService _imageStorageService;
         private readonly IMapper _mapper;
 
         public ProductService(
             IProductRepository repository,
             ICategoryRepository categoryRepository,
             ISupplierRepository supplierRepository,
+            IImageStorageService imageStorageService,
             IMapper mapper)
         {
             _repository = repository;
             _categoryRepository = categoryRepository;
             _supplierRepository = supplierRepository;
+            _imageStorageService = imageStorageService;
             _mapper = mapper;
         }
 
@@ -93,6 +96,7 @@ namespace ProjectBackend.api.Services
         public async Task<ProductDto> DeleteAsync(int id, CancellationToken cancellationToken)
         {
             var deleted = EnsureFound(await _repository.DeleteAsync(id, cancellationToken), "Product", id);
+            _imageStorageService.TryDeleteProductImage(deleted.Image);
             return _mapper.Map<ProductDto>(deleted);
         }
 
