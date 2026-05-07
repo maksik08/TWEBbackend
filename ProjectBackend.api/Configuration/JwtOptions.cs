@@ -10,6 +10,8 @@ namespace ProjectBackend.api.Configuration
 
         public string Audience { get; set; } = string.Empty;
 
-        public int ExpiryHours { get; set; } = 2;
+        public int AccessTokenExpiryMinutes { get; set; } = 15;
+
+        public int RefreshTokenExpiryDays { get; set; } = 7;
     }
 }

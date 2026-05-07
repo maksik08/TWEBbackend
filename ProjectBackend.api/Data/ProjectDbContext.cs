@@ -14,6 +14,7 @@ namespace ProjectBackend.api.Data
         public DbSet<UserDomain> Users { get; set; }
         public DbSet<OrderDomain> Orders { get; set; }
         public DbSet<OrderItemDomain> OrderItems { get; set; }
+        public DbSet<RefreshTokenDomain> RefreshTokens { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -126,6 +127,23 @@ namespace ProjectBackend.api.Data
                     .WithMany()
                     .HasForeignKey(i => i.ProductId)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<RefreshTokenDomain>(entity =>
+            {
+                entity.Property(t => t.TokenHash).HasMaxLength(128).IsRequired();
+                entity.Property(t => t.CreatedAt).HasColumnType("datetime2");
+                entity.Property(t => t.ExpiresAt).HasColumnType("datetime2");
+                entity.Property(t => t.RevokedAt).HasColumnType("datetime2");
+                entity.Ignore(t => t.IsActive);
+
+                entity.HasOne(t => t.User)
+                    .WithMany()
+                    .HasForeignKey(t => t.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(t => t.TokenHash).IsUnique();
+                entity.HasIndex(t => t.UserId);
             });
 
             base.OnModelCreating(modelBuilder);
