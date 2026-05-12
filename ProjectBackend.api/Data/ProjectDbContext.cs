@@ -15,6 +15,7 @@ namespace ProjectBackend.api.Data
         public DbSet<OrderDomain> Orders { get; set; }
         public DbSet<OrderItemDomain> OrderItems { get; set; }
         public DbSet<RefreshTokenDomain> RefreshTokens { get; set; }
+        public DbSet<PasswordResetTokenDomain> PasswordResetTokens { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -136,6 +137,23 @@ namespace ProjectBackend.api.Data
                 entity.Property(t => t.ExpiresAt).HasColumnType("datetime2");
                 entity.Property(t => t.RevokedAt).HasColumnType("datetime2");
                 entity.Ignore(t => t.IsActive);
+
+                entity.HasOne(t => t.User)
+                    .WithMany()
+                    .HasForeignKey(t => t.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(t => t.TokenHash).IsUnique();
+                entity.HasIndex(t => t.UserId);
+            });
+
+            modelBuilder.Entity<PasswordResetTokenDomain>(entity =>
+            {
+                entity.Property(t => t.TokenHash).HasMaxLength(128).IsRequired();
+                entity.Property(t => t.CreatedAt).HasColumnType("datetime2");
+                entity.Property(t => t.ExpiresAt).HasColumnType("datetime2");
+                entity.Property(t => t.ConsumedAt).HasColumnType("datetime2");
+                entity.Ignore(t => t.IsUsable);
 
                 entity.HasOne(t => t.User)
                     .WithMany()

@@ -12,12 +12,15 @@ namespace ProjectBackend.api.Services
     public class TokenService : ITokenService
     {
         private const int RefreshTokenByteLength = 64;
+        private const int PasswordResetTokenByteLength = 32;
 
         private readonly JwtOptions _jwtOptions;
+        private readonly PasswordResetOptions _passwordResetOptions;
 
-        public TokenService(IOptions<JwtOptions> jwtOptions)
+        public TokenService(IOptions<JwtOptions> jwtOptions, IOptions<PasswordResetOptions> passwordResetOptions)
         {
             _jwtOptions = jwtOptions.Value;
+            _passwordResetOptions = passwordResetOptions.Value;
         }
 
         public string CreateAccessToken(UserDomain user)
@@ -61,6 +64,22 @@ namespace ProjectBackend.api.Services
         }
 
         public string HashRefreshToken(string rawToken)
+        {
+            var bytes = Encoding.UTF8.GetBytes(rawToken);
+            var hash = SHA256.HashData(bytes);
+            return Convert.ToHexString(hash);
+        }
+
+        public (string RawToken, string TokenHash, DateTime ExpiresAt) CreatePasswordResetToken()
+        {
+            var bytes = RandomNumberGenerator.GetBytes(PasswordResetTokenByteLength);
+            var rawToken = Base64UrlEncode(bytes);
+            var hash = HashPasswordResetToken(rawToken);
+            var expiresAt = DateTime.UtcNow.AddMinutes(_passwordResetOptions.TokenLifetimeMinutes);
+            return (rawToken, hash, expiresAt);
+        }
+
+        public string HashPasswordResetToken(string rawToken)
         {
             var bytes = Encoding.UTF8.GetBytes(rawToken);
             var hash = SHA256.HashData(bytes);

@@ -31,5 +31,25 @@ namespace ProjectBackend.api.Repositories
             _dbContext.RefreshTokens.Update(entity);
             return _dbContext.SaveChangesAsync(cancellationToken);
         }
+
+        public async Task RevokeAllForUserAsync(int userId, CancellationToken cancellationToken)
+        {
+            var utcNow = DateTime.UtcNow;
+            var active = await _dbContext.RefreshTokens
+                .Where(t => t.UserId == userId && t.RevokedAt == null && t.ExpiresAt > utcNow)
+                .ToListAsync(cancellationToken);
+
+            if (active.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var token in active)
+            {
+                token.RevokedAt = utcNow;
+            }
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
     }
 }

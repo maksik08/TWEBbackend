@@ -12,5 +12,9 @@ namespace ProjectBackend.api.Services
         Task<AuthResult> RefreshAsync(string rawRefreshToken, CancellationToken cancellationToken);
 
         Task LogoutAsync(string rawRefreshToken, CancellationToken cancellationToken);
+
+        Task ForgotPasswordAsync(ForgotPasswordDto dto, CancellationToken cancellationToken);
+
+        Task ResetPasswordAsync(ResetPasswordDto dto, CancellationToken cancellationToken);
     }
 }

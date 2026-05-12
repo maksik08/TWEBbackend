@@ -9,5 +9,7 @@ namespace ProjectBackend.api.Repositories
         Task<RefreshTokenDomain> CreateAsync(RefreshTokenDomain entity, CancellationToken cancellationToken);
 
         Task UpdateAsync(RefreshTokenDomain entity, CancellationToken cancellationToken);
+
+        Task RevokeAllForUserAsync(int userId, CancellationToken cancellationToken);
     }
 }

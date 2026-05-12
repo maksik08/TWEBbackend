@@ -11,5 +11,9 @@ namespace ProjectBackend.api.Services
         (string RawToken, string TokenHash, DateTime ExpiresAt) CreateRefreshToken();
 
         string HashRefreshToken(string rawToken);
+
+        (string RawToken, string TokenHash, DateTime ExpiresAt) CreatePasswordResetToken();
+
+        string HashPasswordResetToken(string rawToken);
     }
 }

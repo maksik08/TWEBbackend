@@ -80,6 +80,8 @@ builder.Services.Configure<JwtOptions>(
     builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.Configure<AdminSeedOptions>(
     builder.Configuration.GetSection(AdminSeedOptions.SectionName));
+builder.Services.Configure<PasswordResetOptions>(
+    builder.Configuration.GetSection(PasswordResetOptions.SectionName));
 builder.Services.AddScoped<IDatabaseInitializer, DatabaseInitializer>();
 
 
@@ -98,8 +100,10 @@ builder.Services.AddScoped<ICustomerService, CustomerService>();
 
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
+builder.Services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IPasswordResetNotifier, ConsolePasswordResetNotifier>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserContext, CurrentUserContext>();

@@ -105,6 +105,25 @@ namespace ProjectBackend.api.Repositories
                 .FirstOrDefaultAsync(u => u.Username == username, cancellationToken);
         }
 
+        public async Task<UserDomain?> GetByEmailAsync(string email, CancellationToken cancellationToken)
+        {
+            return await _dbContext.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+        }
+
+        public async Task UpdatePasswordAsync(int userId, string passwordHash, CancellationToken cancellationToken)
+        {
+            var existing = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
+            if (existing is null)
+            {
+                return;
+            }
+
+            existing.Password = passwordHash;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
         public async Task<int> CountByRoleAsync(UserRole role, CancellationToken cancellationToken)
         {
             return await _dbContext.Users.CountAsync(u => u.Role == role, cancellationToken);

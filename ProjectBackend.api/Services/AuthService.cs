@@ -11,18 +11,24 @@ namespace ProjectBackend.api.Services
     {
         private readonly IUserRepository _repository;
         private readonly IRefreshTokenRepository _refreshTokenRepository;
+        private readonly IPasswordResetTokenRepository _passwordResetTokenRepository;
         private readonly ITokenService _tokenService;
+        private readonly IPasswordResetNotifier _passwordResetNotifier;
         private readonly IMapper _mapper;
 
         public AuthService(
             IUserRepository repository,
             IRefreshTokenRepository refreshTokenRepository,
+            IPasswordResetTokenRepository passwordResetTokenRepository,
             ITokenService tokenService,
+            IPasswordResetNotifier passwordResetNotifier,
             IMapper mapper)
         {
             _repository = repository;
             _refreshTokenRepository = refreshTokenRepository;
+            _passwordResetTokenRepository = passwordResetTokenRepository;
             _tokenService = tokenService;
+            _passwordResetNotifier = passwordResetNotifier;
             _mapper = mapper;
         }
 
@@ -107,6 +113,63 @@ namespace ProjectBackend.api.Services
 
             stored.RevokedAt = DateTime.UtcNow;
             await _refreshTokenRepository.UpdateAsync(stored, cancellationToken);
+        }
+
+        public async Task ForgotPasswordAsync(ForgotPasswordDto dto, CancellationToken cancellationToken)
+        {
+            var email = NormalizeEmail(dto.Email);
+            var user = await _repository.GetByEmailAsync(email, cancellationToken);
+            if (user is null)
+            {
+                return;
+            }
+
+            await _passwordResetTokenRepository.InvalidateActiveForUserAsync(user.Id, cancellationToken);
+
+            var (rawToken, tokenHash, expiresAt) = _tokenService.CreatePasswordResetToken();
+            await _passwordResetTokenRepository.CreateAsync(new PasswordResetTokenDomain
+            {
+                TokenHash = tokenHash,
+                UserId = user.Id,
+                ExpiresAt = expiresAt,
+                CreatedAt = DateTime.UtcNow
+            }, cancellationToken);
+
+            await _passwordResetNotifier.NotifyAsync(user, rawToken, cancellationToken);
+        }
+
+        public async Task ResetPasswordAsync(ResetPasswordDto dto, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Token))
+            {
+                throw new ValidationException("Reset token is required.");
+            }
+
+            if (dto.NewPassword != dto.ConfirmPassword)
+            {
+                throw new ValidationException("Passwords do not match.");
+            }
+
+            var hash = _tokenService.HashPasswordResetToken(dto.Token);
+            var stored = await _passwordResetTokenRepository.GetByHashAsync(hash, cancellationToken);
+            if (stored is null || !stored.IsUsable)
+            {
+                throw new ValidationException("Reset token is invalid or expired.");
+            }
+
+            var user = await _repository.GetByIdAsync(stored.UserId, cancellationToken);
+            if (user is null)
+            {
+                throw new ValidationException("Reset token is invalid or expired.");
+            }
+
+            var newHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+            await _repository.UpdatePasswordAsync(user.Id, newHash, cancellationToken);
+
+            stored.ConsumedAt = DateTime.UtcNow;
+            await _passwordResetTokenRepository.UpdateAsync(stored, cancellationToken);
+
+            await _refreshTokenRepository.RevokeAllForUserAsync(user.Id, cancellationToken);
         }
 
         private async Task<AuthResult> BuildAuthResultAsync(UserDomain user, CancellationToken cancellationToken)

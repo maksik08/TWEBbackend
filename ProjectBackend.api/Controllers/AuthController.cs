@@ -62,6 +62,28 @@ namespace ProjectBackend.api.Controllers
         }
 
         /// <summary>
+        /// Starts a password reset flow. Always responds with 200 to avoid leaking which emails exist.
+        /// </summary>
+        [GuestOnly]
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto, CancellationToken cancellationToken)
+        {
+            await _authService.ForgotPasswordAsync(dto, cancellationToken);
+            return Ok(ApiResponse<object?>.Ok(null, "If the email is registered, a reset link has been sent."));
+        }
+
+        /// <summary>
+        /// Completes a password reset using a single-use token. Revokes all active refresh tokens for the user.
+        /// </summary>
+        [GuestOnly]
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto, CancellationToken cancellationToken)
+        {
+            await _authService.ResetPasswordAsync(dto, cancellationToken);
+            return Ok(ApiResponse<object?>.Ok(null, "Password has been updated. Please sign in with your new password."));
+        }
+
+        /// <summary>
         /// Revokes the refresh token tied to the current cookie and clears it.
         /// </summary>
         [HttpPost("logout")]
