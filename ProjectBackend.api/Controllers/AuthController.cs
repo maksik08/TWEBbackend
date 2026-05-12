@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using ProjectBackend.api.Filters;
 using ProjectBackend.api.Models.Common;
 using ProjectBackend.api.Models.DTO;
@@ -29,6 +30,7 @@ namespace ProjectBackend.api.Controllers
         /// Registers a new user account.
         /// </summary>
         [GuestOnly]
+        [EnableRateLimiting("auth")]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto, CancellationToken cancellationToken)
         {
@@ -41,6 +43,7 @@ namespace ProjectBackend.api.Controllers
         /// Authenticates a user, returns a JWT access token in the body and sets a httpOnly refresh cookie.
         /// </summary>
         [GuestOnly]
+        [EnableRateLimiting("auth")]
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto dto, CancellationToken cancellationToken)
         {
@@ -65,6 +68,7 @@ namespace ProjectBackend.api.Controllers
         /// Starts a password reset flow. Always responds with 200 to avoid leaking which emails exist.
         /// </summary>
         [GuestOnly]
+        [EnableRateLimiting("auth")]
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto, CancellationToken cancellationToken)
         {
@@ -76,6 +80,7 @@ namespace ProjectBackend.api.Controllers
         /// Completes a password reset using a single-use token. Revokes all active refresh tokens for the user.
         /// </summary>
         [GuestOnly]
+        [EnableRateLimiting("auth")]
         [HttpPost("reset-password")]
         public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordDto dto, CancellationToken cancellationToken)
         {
