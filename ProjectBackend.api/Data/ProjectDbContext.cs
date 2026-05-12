@@ -16,6 +16,7 @@ namespace ProjectBackend.api.Data
         public DbSet<OrderItemDomain> OrderItems { get; set; }
         public DbSet<RefreshTokenDomain> RefreshTokens { get; set; }
         public DbSet<PasswordResetTokenDomain> PasswordResetTokens { get; set; }
+        public DbSet<ContactMessageDomain> ContactMessages { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -162,6 +163,23 @@ namespace ProjectBackend.api.Data
 
                 entity.HasIndex(t => t.TokenHash).IsUnique();
                 entity.HasIndex(t => t.UserId);
+            });
+
+            modelBuilder.Entity<ContactMessageDomain>(entity =>
+            {
+                entity.Property(m => m.Name).HasMaxLength(100).IsRequired();
+                entity.Property(m => m.Email).HasMaxLength(200).IsRequired();
+                entity.Property(m => m.Subject).HasMaxLength(200).IsRequired();
+                entity.Property(m => m.Message).HasMaxLength(4000).IsRequired();
+                entity.Property(m => m.CreatedAt).HasColumnType("datetime2");
+
+                entity.HasOne(m => m.User)
+                    .WithMany()
+                    .HasForeignKey(m => m.UserId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(m => m.CreatedAt);
+                entity.HasIndex(m => m.IsRead);
             });
 
             base.OnModelCreating(modelBuilder);
