@@ -94,6 +94,11 @@ namespace ProjectBackend.api.Services
             {
                 UserId = userId,
                 Status = OrderStatus.Pending,
+                RecipientName = dto.RecipientName.Trim(),
+                Phone = dto.Phone.Trim(),
+                ShippingAddress = dto.ShippingAddress.Trim(),
+                City = dto.City.Trim(),
+                Comment = string.IsNullOrWhiteSpace(dto.Comment) ? null : dto.Comment.Trim(),
                 Items = aggregated.Select(line =>
                 {
                     var product = products[line.ProductId];

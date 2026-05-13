@@ -20,6 +20,21 @@ namespace ProjectBackend.api.Models.Domain
 
         public DateTime? PaidAt { get; set; }
 
+        [MaxLength(120)]
+        public string? RecipientName { get; set; }
+
+        [MaxLength(40)]
+        public string? Phone { get; set; }
+
+        [MaxLength(200)]
+        public string? ShippingAddress { get; set; }
+
+        [MaxLength(80)]
+        public string? City { get; set; }
+
+        [MaxLength(500)]
+        public string? Comment { get; set; }
+
         public ICollection<OrderItemDomain> Items { get; set; } = new List<OrderItemDomain>();
     }
 }
