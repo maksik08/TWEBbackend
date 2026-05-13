@@ -96,6 +96,8 @@ namespace ProjectBackend.api.Repositories
             existing.Title = product.Title;
             existing.Image = product.Image;
             existing.Price = product.Price;
+            existing.StockQuantity = product.StockQuantity;
+            existing.IsPreorder = product.IsPreorder;
             existing.CategoryId = product.CategoryId;
             existing.SupplierId = product.SupplierId;
 

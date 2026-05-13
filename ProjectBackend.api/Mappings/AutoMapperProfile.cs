@@ -12,10 +12,17 @@ namespace ProjectBackend.api.Mappings
                 .ForMember(dest => dest.Category,
                     opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : null))
                 .ForMember(dest => dest.Supplier,
-                    opt => opt.MapFrom(src => src.Supplier != null ? src.Supplier.Name : null));
+                    opt => opt.MapFrom(src => src.Supplier != null ? src.Supplier.Name : null))
+                .ForMember(dest => dest.Availability,
+                    opt => opt.MapFrom(src =>
+                        src.IsPreorder ? "preorder"
+                        : src.StockQuantity <= 0 ? "out-of-stock"
+                        : src.StockQuantity <= 5 ? "limited"
+                        : "in-stock"));
             CreateMap<ProductDto, ProductsDomain>()
                 .ForMember(dest => dest.Category, opt => opt.Ignore())
-                .ForMember(dest => dest.Supplier, opt => opt.Ignore());
+                .ForMember(dest => dest.Supplier, opt => opt.Ignore())
+                .ForMember(dest => dest.RowVersion, opt => opt.Ignore());
             CreateMap<CreateProductDto, ProductsDomain>();
             CreateMap<UpdateProductDto, ProductsDomain>();
 

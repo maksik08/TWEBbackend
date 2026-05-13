@@ -12,6 +12,8 @@ namespace ProjectBackend.api.Services
 {
     public class OrderService : ApplicationServiceBase, IOrderService
     {
+        private const int PayConcurrencyRetries = 3;
+
         private readonly IOrderRepository _orderRepository;
         private readonly IUserRepository _userRepository;
         private readonly ProjectDbContext _dbContext;
@@ -88,6 +90,23 @@ namespace ProjectBackend.api.Services
                 throw new ValidationException($"Products not found: {string.Join(", ", missing)}.");
             }
 
+            var insufficient = aggregated
+                .Where(line =>
+                {
+                    var product = products[line.ProductId];
+                    return !product.IsPreorder && product.StockQuantity < line.Quantity;
+                })
+                .Select(line =>
+                {
+                    var product = products[line.ProductId];
+                    return $"{product.Title ?? product.Name} (запрошено {line.Quantity}, доступно {product.StockQuantity})";
+                })
+                .ToList();
+            if (insufficient.Count > 0)
+            {
+                throw new ValidationException($"Недостаточно товара: {string.Join("; ", insufficient)}.");
+            }
+
             await using var transaction = await _orderRepository.BeginTransactionAsync(cancellationToken);
 
             var order = new OrderDomain
@@ -123,6 +142,24 @@ namespace ProjectBackend.api.Services
 
         public async Task<OrderDto> PayAsync(int id, CancellationToken cancellationToken)
         {
+            for (var attempt = 1; ; attempt++)
+            {
+                try
+                {
+                    return await PayCoreAsync(id, cancellationToken);
+                }
+                catch (DbUpdateConcurrencyException) when (attempt < PayConcurrencyRetries)
+                {
+                    foreach (var entry in _dbContext.ChangeTracker.Entries().ToList())
+                    {
+                        entry.State = EntityState.Detached;
+                    }
+                }
+            }
+        }
+
+        private async Task<OrderDto> PayCoreAsync(int id, CancellationToken cancellationToken)
+        {
             var order = EnsureFound(await _orderRepository.GetByIdAsync(id, cancellationToken), "Order", id);
             EnsureCanAccess(order);
 
@@ -137,8 +174,35 @@ namespace ProjectBackend.api.Services
                 throw new ValidationException("Insufficient balance to pay for this order.");
             }
 
+            var productIds = order.Items.Select(i => i.ProductId).Distinct().ToList();
+            var trackedProducts = await _dbContext.Products
+                .Where(p => productIds.Contains(p.Id))
+                .ToDictionaryAsync(p => p.Id, cancellationToken);
+
+            foreach (var item in order.Items)
+            {
+                if (!trackedProducts.TryGetValue(item.ProductId, out var product))
+                {
+                    throw new ValidationException($"Product {item.ProductId} not found.");
+                }
+
+                if (product.IsPreorder)
+                {
+                    continue;
+                }
+
+                if (product.StockQuantity < item.Quantity)
+                {
+                    throw new ValidationException(
+                        $"Недостаточно товара \"{product.Title ?? product.Name}\": доступно {product.StockQuantity}, требуется {item.Quantity}.");
+                }
+
+                product.StockQuantity -= item.Quantity;
+            }
+
             await using var transaction = await _orderRepository.BeginTransactionAsync(cancellationToken);
 
+            await _dbContext.SaveChangesAsync(cancellationToken);
             await _userRepository.AdjustBalanceAsync(order.UserId, -order.Subtotal, cancellationToken);
             var updated = await _orderRepository.UpdateStatusAsync(id, OrderStatus.Paid, DateTime.UtcNow, cancellationToken);
 
@@ -160,6 +224,20 @@ namespace ProjectBackend.api.Services
 
             if (order.Status == OrderStatus.Paid)
             {
+                var productIds = order.Items.Select(i => i.ProductId).Distinct().ToList();
+                var trackedProducts = await _dbContext.Products
+                    .Where(p => productIds.Contains(p.Id))
+                    .ToDictionaryAsync(p => p.Id, cancellationToken);
+
+                foreach (var item in order.Items)
+                {
+                    if (trackedProducts.TryGetValue(item.ProductId, out var product) && !product.IsPreorder)
+                    {
+                        product.StockQuantity += item.Quantity;
+                    }
+                }
+
+                await _dbContext.SaveChangesAsync(cancellationToken);
                 await _userRepository.AdjustBalanceAsync(order.UserId, order.Subtotal, cancellationToken);
             }
 

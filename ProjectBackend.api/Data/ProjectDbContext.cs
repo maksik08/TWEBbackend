@@ -36,6 +36,9 @@ namespace ProjectBackend.api.Data
             {
                 entity.Property(p => p.Name).HasMaxLength(200);
                 entity.Property(p => p.Price).HasColumnType("decimal(18,2)");
+                entity.Property(p => p.StockQuantity).HasDefaultValue(0);
+                entity.Property(p => p.IsPreorder).HasDefaultValue(false);
+                entity.Property(p => p.RowVersion).IsRowVersion();
                 entity.Property(p => p.CreatedAt).HasColumnType("datetime2");
                 entity.Property(p => p.UpdatedAt).HasColumnType("datetime2");
 

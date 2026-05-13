@@ -19,6 +19,13 @@ namespace ProjectBackend.api.Models.Domain
 
         public decimal Price { get; set; } = 0;
 
+        public int StockQuantity { get; set; } = 0;
+
+        public bool IsPreorder { get; set; } = false;
+
+        [Timestamp]
+        public byte[]? RowVersion { get; set; }
+
         public int? CategoryId { get; set; }
         [ForeignKey(nameof(CategoryId))]
         public CategoryDomain? Category { get; set; }
