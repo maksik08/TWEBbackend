@@ -39,16 +39,29 @@ namespace ProjectBackend.api.Mappings
             CreateMap<UpdateCustomerDto, CustomerDomain>();
 
             CreateMap<UserDomain, UserDto>();
+            CreateMap<UserDomain, InstallerLookupDto>();
             CreateMap<CreateUserDto, UserDomain>()
                 .ForMember(dest => dest.Password, opt => opt.Ignore());
             CreateMap<UpdateUserDto, UserDomain>()
                 .ForMember(dest => dest.Password, opt => opt.Ignore());
 
             CreateMap<OrderItemDomain, OrderItemDto>()
-                .ForMember(dest => dest.LineTotal, opt => opt.MapFrom(src => src.UnitPrice * src.Quantity));
-
+                .ForMember(dest => dest.LineTotal, opt => opt.MapFrom(src => src.Quantity * src.UnitPrice));
             CreateMap<OrderDomain, OrderDto>()
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? src.User.Username : null));
+
+            CreateMap<ServiceRequestCommentDomain, ServiceRequestCommentDto>()
+                .ForMember(dest => dest.AuthorUsername,
+                    opt => opt.MapFrom(src => src.AuthorUser != null ? src.AuthorUser.Username : string.Empty));
+            CreateMap<WorkPhotoDomain, WorkPhotoDto>();
+            CreateMap<ServiceRequestDomain, ServiceRequestDto>()
+                .ForMember(dest => dest.CustomerUsername,
+                    opt => opt.MapFrom(src => src.Customer != null ? src.Customer.Username : string.Empty))
+                .ForMember(dest => dest.InstallerUsername,
+                    opt => opt.MapFrom(src => src.Installer != null ? src.Installer.Username : null))
+                .ForMember(dest => dest.ManagerUsername,
+                    opt => opt.MapFrom(src => src.Manager != null ? src.Manager.Username : null));
+            CreateMap<NotificationDomain, NotificationDto>();
         }
     }
 }

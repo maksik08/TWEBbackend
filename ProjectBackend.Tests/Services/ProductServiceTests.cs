@@ -20,6 +20,8 @@ namespace ProjectBackend.Tests.Services
                 productRepository,
                 categoryRepository,
                 supplierRepository,
+                new FakeCurrentUserContext(),
+                new FakeImageStorageService(),
                 TestMapperFactory.Create());
 
             var dto = new CreateProductDto
@@ -40,6 +42,8 @@ namespace ProjectBackend.Tests.Services
                 new FakeProductRepository(),
                 new FakeCategoryRepository(),
                 new FakeSupplierRepository(),
+                new FakeCurrentUserContext(),
+                new FakeImageStorageService(),
                 TestMapperFactory.Create());
 
             await Assert.ThrowsAsync<NotFoundException>(() => service.GetByIdAsync(5, CancellationToken.None));
@@ -57,6 +61,8 @@ namespace ProjectBackend.Tests.Services
                 new FakeProductRepository(),
                 categoryRepository,
                 supplierRepository,
+                new FakeCurrentUserContext(),
+                new FakeImageStorageService(),
                 TestMapperFactory.Create());
 
             var dto = new CreateProductDto
@@ -82,6 +88,8 @@ namespace ProjectBackend.Tests.Services
                 new FakeProductRepository(),
                 categoryRepository,
                 supplierRepository,
+                new FakeCurrentUserContext(),
+                new FakeImageStorageService(),
                 TestMapperFactory.Create());
 
             var dto = new CreateProductDto

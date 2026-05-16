@@ -13,6 +13,7 @@ namespace ProjectBackend.api.Services
         private readonly IProductRepository _repository;
         private readonly ICategoryRepository _categoryRepository;
         private readonly ISupplierRepository _supplierRepository;
+        private readonly ICurrentUserContext _currentUserContext;
         private readonly IImageStorageService _imageStorageService;
         private readonly IMapper _mapper;
 
@@ -20,12 +21,14 @@ namespace ProjectBackend.api.Services
             IProductRepository repository,
             ICategoryRepository categoryRepository,
             ISupplierRepository supplierRepository,
+            ICurrentUserContext currentUserContext,
             IImageStorageService imageStorageService,
             IMapper mapper)
         {
             _repository = repository;
             _categoryRepository = categoryRepository;
             _supplierRepository = supplierRepository;
+            _currentUserContext = currentUserContext;
             _imageStorageService = imageStorageService;
             _mapper = mapper;
         }
@@ -47,7 +50,8 @@ namespace ProjectBackend.api.Services
                 CategoryId = request.CategoryId,
                 SupplierId = request.SupplierId,
                 MinPrice = request.MinPrice,
-                MaxPrice = request.MaxPrice
+                MaxPrice = request.MaxPrice,
+                IncludeHidden = false
             };
 
             var products = await _repository.GetAllAsync(queryOptions, cancellationToken);
@@ -63,6 +67,11 @@ namespace ProjectBackend.api.Services
         public async Task<ProductDto> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
             var product = EnsureFound(await _repository.GetByIdAsync(id, cancellationToken), "Product", id);
+            if (!product.IsVisible && _currentUserContext.Role is not UserRole.Admin and not UserRole.Manager)
+            {
+                throw new NotFoundException($"Product with id {id} was not found.");
+            }
+
             return _mapper.Map<ProductDto>(product);
         }
 
@@ -71,10 +80,14 @@ namespace ProjectBackend.api.Services
             await ValidateReferencesAsync(dto.CategoryId, dto.SupplierId, cancellationToken);
             var normalizedName = NormalizeRequiredText(dto.Name, "Product name");
             EnsureMinimumValue(dto.Price, 0.01m, "Price");
+            EnsureNonNegative(dto.StockQuantity, "Stock quantity");
+
             var entity = _mapper.Map<ProductsDomain>(dto);
             entity.Name = normalizedName;
             entity.Title = NormalizeOptionalText(dto.Title);
             entity.Image = NormalizeOptionalText(dto.Image);
+            entity.IsVisible = dto.IsVisible;
+
             var created = await _repository.CreateAsync(entity, cancellationToken);
             return _mapper.Map<ProductDto>(created);
         }
@@ -84,10 +97,14 @@ namespace ProjectBackend.api.Services
             await ValidateReferencesAsync(dto.CategoryId, dto.SupplierId, cancellationToken);
             var normalizedName = NormalizeRequiredText(dto.Name, "Product name");
             EnsureMinimumValue(dto.Price, 0.01m, "Price");
+            EnsureNonNegative(dto.StockQuantity, "Stock quantity");
+
             var entity = _mapper.Map<ProductsDomain>(dto);
             entity.Name = normalizedName;
             entity.Title = NormalizeOptionalText(dto.Title);
             entity.Image = NormalizeOptionalText(dto.Image);
+            entity.IsVisible = dto.IsVisible;
+
             var updated = await _repository.UpdateAsync(id, entity, cancellationToken);
             updated = EnsureFound(updated, "Product", id);
             return _mapper.Map<ProductDto>(updated);

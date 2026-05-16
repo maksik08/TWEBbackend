@@ -22,6 +22,52 @@ namespace ProjectBackend.api.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("ProjectBackend.api.Models.Domain.ActionLogDomain", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("ActorRole")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("ActorUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Details")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int?>("EntityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActorUserId");
+
+                    b.ToTable("ActionLogs");
+                });
+
             modelBuilder.Entity("ProjectBackend.api.Models.Domain.CategoryDomain", b =>
                 {
                     b.Property<int>("Id")
@@ -136,6 +182,50 @@ namespace ProjectBackend.api.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Customers");
+                });
+
+            modelBuilder.Entity("ProjectBackend.api.Models.Domain.NotificationDomain", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsRead")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int?>("RelatedEntityId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("RelatedEntityType")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Notifications");
                 });
 
             modelBuilder.Entity("ProjectBackend.api.Models.Domain.OrderDomain", b =>
@@ -287,6 +377,11 @@ namespace ProjectBackend.api.Migrations
                         .HasColumnType("bit")
                         .HasDefaultValue(false);
 
+                    b.Property<bool>("IsVisible")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -357,6 +452,118 @@ namespace ProjectBackend.api.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("RefreshTokens");
+                });
+
+            modelBuilder.Entity("ProjectBackend.api.Models.Domain.ServiceRequestCommentDomain", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("AuthorUserId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Message")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("ServiceRequestId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorUserId");
+
+                    b.HasIndex("ServiceRequestId");
+
+                    b.ToTable("ServiceRequestComments");
+                });
+
+            modelBuilder.Entity("ProjectBackend.api.Models.Domain.ServiceRequestDomain", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("nvarchar(400)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("CompletionReport")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<string>("ContactPhone")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CustomerId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int?>("InstallerId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ManagerId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("PreferredVisitAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RequestNumber")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("nvarchar(32)");
+
+                    b.Property<DateTime?>("ScheduledVisitAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ServiceTitle")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CustomerId");
+
+                    b.HasIndex("InstallerId");
+
+                    b.HasIndex("ManagerId");
+
+                    b.HasIndex("RequestNumber")
+                        .IsUnique();
+
+                    b.ToTable("ServiceRequests");
                 });
 
             modelBuilder.Entity("ProjectBackend.api.Models.Domain.SupplierDomain", b =>
@@ -457,6 +664,50 @@ namespace ProjectBackend.api.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("ProjectBackend.api.Models.Domain.WorkPhotoDomain", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(260)
+                        .HasColumnType("nvarchar(260)");
+
+                    b.Property<string>("FilePath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("ServiceRequestId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ServiceRequestId");
+
+                    b.ToTable("WorkPhotos");
+                });
+
+            modelBuilder.Entity("ProjectBackend.api.Models.Domain.ActionLogDomain", b =>
+                {
+                    b.HasOne("ProjectBackend.api.Models.Domain.UserDomain", "ActorUser")
+                        .WithMany("ActionLogs")
+                        .HasForeignKey("ActorUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("ActorUser");
+                });
+
             modelBuilder.Entity("ProjectBackend.api.Models.Domain.ContactMessageDomain", b =>
                 {
                     b.HasOne("ProjectBackend.api.Models.Domain.UserDomain", "User")
@@ -467,10 +718,21 @@ namespace ProjectBackend.api.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ProjectBackend.api.Models.Domain.NotificationDomain", b =>
+                {
+                    b.HasOne("ProjectBackend.api.Models.Domain.UserDomain", "User")
+                        .WithMany("Notifications")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("ProjectBackend.api.Models.Domain.OrderDomain", b =>
                 {
                     b.HasOne("ProjectBackend.api.Models.Domain.UserDomain", "User")
-                        .WithMany()
+                        .WithMany("Orders")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -487,7 +749,7 @@ namespace ProjectBackend.api.Migrations
                         .IsRequired();
 
                     b.HasOne("ProjectBackend.api.Models.Domain.ProductsDomain", "Product")
-                        .WithMany()
+                        .WithMany("OrderItems")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
@@ -536,6 +798,61 @@ namespace ProjectBackend.api.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ProjectBackend.api.Models.Domain.ServiceRequestCommentDomain", b =>
+                {
+                    b.HasOne("ProjectBackend.api.Models.Domain.UserDomain", "AuthorUser")
+                        .WithMany("ServiceRequestComments")
+                        .HasForeignKey("AuthorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ProjectBackend.api.Models.Domain.ServiceRequestDomain", "ServiceRequest")
+                        .WithMany("Comments")
+                        .HasForeignKey("ServiceRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AuthorUser");
+
+                    b.Navigation("ServiceRequest");
+                });
+
+            modelBuilder.Entity("ProjectBackend.api.Models.Domain.ServiceRequestDomain", b =>
+                {
+                    b.HasOne("ProjectBackend.api.Models.Domain.UserDomain", "Customer")
+                        .WithMany("ServiceRequests")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ProjectBackend.api.Models.Domain.UserDomain", "Installer")
+                        .WithMany("AssignedServiceRequests")
+                        .HasForeignKey("InstallerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ProjectBackend.api.Models.Domain.UserDomain", "Manager")
+                        .WithMany("ManagedServiceRequests")
+                        .HasForeignKey("ManagerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Customer");
+
+                    b.Navigation("Installer");
+
+                    b.Navigation("Manager");
+                });
+
+            modelBuilder.Entity("ProjectBackend.api.Models.Domain.WorkPhotoDomain", b =>
+                {
+                    b.HasOne("ProjectBackend.api.Models.Domain.ServiceRequestDomain", "ServiceRequest")
+                        .WithMany("WorkPhotos")
+                        .HasForeignKey("ServiceRequestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ServiceRequest");
+                });
+
             modelBuilder.Entity("ProjectBackend.api.Models.Domain.CategoryDomain", b =>
                 {
                     b.Navigation("Products");
@@ -546,9 +863,38 @@ namespace ProjectBackend.api.Migrations
                     b.Navigation("Items");
                 });
 
+            modelBuilder.Entity("ProjectBackend.api.Models.Domain.ProductsDomain", b =>
+                {
+                    b.Navigation("OrderItems");
+                });
+
+            modelBuilder.Entity("ProjectBackend.api.Models.Domain.ServiceRequestDomain", b =>
+                {
+                    b.Navigation("Comments");
+
+                    b.Navigation("WorkPhotos");
+                });
+
             modelBuilder.Entity("ProjectBackend.api.Models.Domain.SupplierDomain", b =>
                 {
                     b.Navigation("Products");
+                });
+
+            modelBuilder.Entity("ProjectBackend.api.Models.Domain.UserDomain", b =>
+                {
+                    b.Navigation("ActionLogs");
+
+                    b.Navigation("AssignedServiceRequests");
+
+                    b.Navigation("ManagedServiceRequests");
+
+                    b.Navigation("Notifications");
+
+                    b.Navigation("Orders");
+
+                    b.Navigation("ServiceRequestComments");
+
+                    b.Navigation("ServiceRequests");
                 });
 #pragma warning restore 612, 618
         }

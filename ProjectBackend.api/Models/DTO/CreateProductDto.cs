@@ -22,6 +22,8 @@ namespace ProjectBackend.api.Models.DTO
 
         public bool IsPreorder { get; set; }
 
+        public bool IsVisible { get; set; } = true;
+
         public int? CategoryId { get; set; }
 
         public int? SupplierId { get; set; }
