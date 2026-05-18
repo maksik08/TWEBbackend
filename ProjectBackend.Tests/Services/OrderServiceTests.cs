@@ -13,6 +13,7 @@ namespace ProjectBackend.Tests.Services
             var orderRepository = new FakeOrderRepository();
             var userRepository = new FakeUserRepository();
             var productRepository = new FakeProductRepository();
+            var paymentTransactionService = new FakePaymentTransactionService();
             var actionLogService = new FakeActionLogService();
 
             userRepository.Users.Add(new UserDomain
@@ -39,6 +40,7 @@ namespace ProjectBackend.Tests.Services
                 orderRepository,
                 userRepository,
                 productRepository,
+                paymentTransactionService,
                 new FakeCurrentUserContext { UserId = 9, Role = UserRole.User, Username = "client" },
                 actionLogService,
                 TestMapperFactory.Create());
@@ -67,6 +69,73 @@ namespace ProjectBackend.Tests.Services
             Assert.Equal(5, productRepository.Products.Single().StockQuantity);
             Assert.Single(orderRepository.Orders);
             Assert.Single(actionLogService.Entries);
+            Assert.Empty(paymentTransactionService.Payments);
+        }
+
+        [Fact]
+        public async Task PayAsync_ShouldRecordCompletedPaymentTransaction()
+        {
+            var orderRepository = new FakeOrderRepository();
+            var userRepository = new FakeUserRepository();
+            var productRepository = new FakeProductRepository();
+            var paymentTransactionService = new FakePaymentTransactionService();
+            var actionLogService = new FakeActionLogService();
+
+            userRepository.Users.Add(new UserDomain
+            {
+                Id = 9,
+                Email = "client@test.com",
+                Username = "client",
+                Password = "hashed",
+                Role = UserRole.User,
+                Balance = 500
+            });
+
+            productRepository.Products.Add(new ProductsDomain
+            {
+                Id = 1,
+                Name = "Router",
+                Price = 100,
+                StockQuantity = 5,
+                IsVisible = true
+            });
+
+            orderRepository.Orders.Add(new OrderDomain
+            {
+                Id = 3,
+                UserId = 9,
+                Status = OrderStatus.Pending,
+                Subtotal = 200,
+                Items =
+                [
+                    new OrderItemDomain
+                    {
+                        Id = 1,
+                        OrderId = 3,
+                        ProductId = 1,
+                        ProductName = "Router",
+                        Quantity = 2,
+                        UnitPrice = 100
+                    }
+                ]
+            });
+
+            var service = new OrderService(
+                orderRepository,
+                userRepository,
+                productRepository,
+                paymentTransactionService,
+                new FakeCurrentUserContext { UserId = 9, Role = UserRole.User, Username = "client" },
+                actionLogService,
+                TestMapperFactory.Create());
+
+            var paid = await service.PayAsync(3, CancellationToken.None);
+
+            Assert.Equal(OrderStatus.Paid, paid.Status);
+            Assert.Single(paymentTransactionService.Payments);
+            Assert.Equal(PaymentTransactionType.OrderPayment, paymentTransactionService.Payments[0].Type);
+            Assert.Equal(200, paymentTransactionService.Payments[0].Amount);
+            Assert.Equal(3, productRepository.Products.Single().StockQuantity);
         }
     }
 }

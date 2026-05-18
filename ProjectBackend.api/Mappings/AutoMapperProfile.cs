@@ -62,6 +62,9 @@ namespace ProjectBackend.api.Mappings
                 .ForMember(dest => dest.ManagerUsername,
                     opt => opt.MapFrom(src => src.Manager != null ? src.Manager.Username : null));
             CreateMap<NotificationDomain, NotificationDto>();
+            CreateMap<PaymentTransactionDomain, PaymentTransactionDto>()
+                .ForMember(dest => dest.Username,
+                    opt => opt.MapFrom(src => src.User != null ? src.User.Username : null));
         }
     }
 }
