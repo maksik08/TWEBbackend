@@ -124,6 +124,15 @@ namespace ProjectBackend.api.Repositories
             await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
+        public async Task<IReadOnlyCollection<UserDomain>> GetByRoleAsync(UserRole role, CancellationToken cancellationToken)
+        {
+            return await _dbContext.Users
+                .AsNoTracking()
+                .Where(user => user.Role == role)
+                .OrderBy(user => user.Username)
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<int> CountByRoleAsync(UserRole role, CancellationToken cancellationToken)
         {
             return await _dbContext.Users.CountAsync(u => u.Role == role, cancellationToken);
@@ -146,7 +155,10 @@ namespace ProjectBackend.api.Repositories
         public async Task<UserDomain?> UpdateProfileAsync(int id, string? firstName, string? lastName, string? phone, CancellationToken cancellationToken)
         {
             var existing = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
-            if (existing is null) return null;
+            if (existing is null)
+            {
+                return null;
+            }
 
             existing.FirstName = firstName;
             existing.LastName = lastName;
@@ -159,7 +171,10 @@ namespace ProjectBackend.api.Repositories
         public async Task<UserDomain?> AdjustBalanceAsync(int id, decimal delta, CancellationToken cancellationToken)
         {
             var existing = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
-            if (existing is null) return null;
+            if (existing is null)
+            {
+                return null;
+            }
 
             existing.Balance += delta;
             await _dbContext.SaveChangesAsync(cancellationToken);

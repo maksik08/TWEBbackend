@@ -42,5 +42,13 @@ namespace ProjectBackend.api.Services
                 throw new ValidationException($"{fieldName} must be greater than or equal to {minimumValue:0.##}.");
             }
         }
+
+        protected static void EnsureNonNegative(int value, string fieldName)
+        {
+            if (value < 0)
+            {
+                throw new ValidationException($"{fieldName} cannot be negative.");
+            }
+        }
     }
 }

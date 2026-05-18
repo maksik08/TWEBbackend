@@ -23,6 +23,11 @@ namespace ProjectBackend.api.Repositories
                 .Include(p => p.Supplier)
                 .AsQueryable();
 
+            if (!queryOptions.IncludeHidden)
+            {
+                query = query.Where(product => product.IsVisible);
+            }
+
             if (!string.IsNullOrWhiteSpace(queryOptions.Search))
             {
                 query = query.Where(product =>
@@ -68,6 +73,42 @@ namespace ProjectBackend.api.Repositories
             return await query.ToPagedResultAsync(queryOptions, cancellationToken);
         }
 
+        public async Task<IReadOnlyCollection<ProductsDomain>> GetByIdsAsync(
+            IReadOnlyCollection<int> ids,
+            bool includeHidden,
+            CancellationToken cancellationToken)
+        {
+            var query = _dbContext.Products
+                .AsNoTracking()
+                .Where(product => ids.Contains(product.Id));
+
+            if (!includeHidden)
+            {
+                query = query.Where(product => product.IsVisible);
+            }
+
+            return await query.ToListAsync(cancellationToken);
+        }
+
+        public async Task<IReadOnlyCollection<ProductsDomain>> GetTrackedByIdsAsync(
+            IReadOnlyCollection<int> ids,
+            CancellationToken cancellationToken)
+        {
+            return await _dbContext.Products
+                .Where(product => ids.Contains(product.Id))
+                .ToListAsync(cancellationToken);
+        }
+
+        public async Task<IReadOnlyCollection<ProductsDomain>> GetAllForStockReportAsync(CancellationToken cancellationToken)
+        {
+            return await _dbContext.Products
+                .AsNoTracking()
+                .Include(product => product.Category)
+                .Include(product => product.Supplier)
+                .OrderBy(product => product.Name)
+                .ToListAsync(cancellationToken);
+        }
+
         public async Task<ProductsDomain?> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
             return await _dbContext.Products
@@ -98,6 +139,7 @@ namespace ProjectBackend.api.Repositories
             existing.Price = product.Price;
             existing.StockQuantity = product.StockQuantity;
             existing.IsPreorder = product.IsPreorder;
+            existing.IsVisible = product.IsVisible;
             existing.CategoryId = product.CategoryId;
             existing.SupplierId = product.SupplierId;
 
@@ -106,6 +148,23 @@ namespace ProjectBackend.api.Repositories
             await ReloadReferenceAsync(existing, p => p.Category, existing.CategoryId.HasValue);
             await ReloadReferenceAsync(existing, p => p.Supplier, existing.SupplierId.HasValue);
 
+            return existing;
+        }
+
+        public async Task<ProductsDomain?> SetVisibilityAsync(int id, bool isVisible, CancellationToken cancellationToken)
+        {
+            var existing = await _dbContext.Products
+                .Include(product => product.Category)
+                .Include(product => product.Supplier)
+                .FirstOrDefaultAsync(product => product.Id == id, cancellationToken);
+
+            if (existing is null)
+            {
+                return null;
+            }
+
+            existing.IsVisible = isVisible;
+            await _dbContext.SaveChangesAsync(cancellationToken);
             return existing;
         }
 

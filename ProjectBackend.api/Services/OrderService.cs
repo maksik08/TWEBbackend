@@ -1,6 +1,4 @@
 using AutoMapper;
-using Microsoft.EntityFrameworkCore;
-using ProjectBackend.api.Data;
 using ProjectBackend.api.Exceptions;
 using ProjectBackend.api.Models.Common;
 using ProjectBackend.api.Models.Domain;
@@ -12,25 +10,26 @@ namespace ProjectBackend.api.Services
 {
     public class OrderService : ApplicationServiceBase, IOrderService
     {
-        private const int PayConcurrencyRetries = 3;
-
         private readonly IOrderRepository _orderRepository;
         private readonly IUserRepository _userRepository;
-        private readonly ProjectDbContext _dbContext;
-        private readonly ICurrentUserContext _currentUser;
+        private readonly IProductRepository _productRepository;
+        private readonly ICurrentUserContext _currentUserContext;
+        private readonly IActionLogService _actionLogService;
         private readonly IMapper _mapper;
 
         public OrderService(
             IOrderRepository orderRepository,
             IUserRepository userRepository,
-            ProjectDbContext dbContext,
-            ICurrentUserContext currentUser,
+            IProductRepository productRepository,
+            ICurrentUserContext currentUserContext,
+            IActionLogService actionLogService,
             IMapper mapper)
         {
             _orderRepository = orderRepository;
             _userRepository = userRepository;
-            _dbContext = dbContext;
-            _currentUser = currentUser;
+            _productRepository = productRepository;
+            _currentUserContext = currentUserContext;
+            _actionLogService = actionLogService;
             _mapper = mapper;
         }
 
@@ -42,7 +41,7 @@ namespace ProjectBackend.api.Services
 
         public Task<PagedResult<OrderDto>> GetAllAsync(OrderListRequestDto request, CancellationToken cancellationToken)
         {
-            return ListAsync(request, request.UserId, cancellationToken);
+            return ListAsync(request, request.UserId ?? request.CustomerId, cancellationToken);
         }
 
         public async Task<OrderDto> GetByIdAsync(int id, CancellationToken cancellationToken)
@@ -56,17 +55,17 @@ namespace ProjectBackend.api.Services
         {
             var userId = RequireUserId();
 
-            if (dto.Items is null || dto.Items.Count == 0)
+            if (dto.Items.Count == 0)
             {
                 throw new ValidationException("Order must contain at least one item.");
             }
 
             var aggregated = dto.Items
-                .GroupBy(i => i.ProductId)
+                .GroupBy(item => item.ProductId)
                 .Select(group => new
                 {
                     ProductId = group.Key,
-                    Quantity = group.Sum(g => g.Quantity)
+                    Quantity = group.Sum(item => item.Quantity)
                 })
                 .ToList();
 
@@ -78,49 +77,44 @@ namespace ProjectBackend.api.Services
                 }
             }
 
-            var productIds = aggregated.Select(line => line.ProductId).ToList();
-            var products = await _dbContext.Products
-                .AsNoTracking()
-                .Where(p => productIds.Contains(p.Id))
-                .ToDictionaryAsync(p => p.Id, cancellationToken);
-
-            var missing = productIds.Where(id => !products.ContainsKey(id)).ToList();
-            if (missing.Count > 0)
+            var productIds = aggregated.Select(line => line.ProductId).ToArray();
+            var products = await _productRepository.GetByIdsAsync(productIds, includeHidden: false, cancellationToken);
+            if (products.Count != productIds.Length)
             {
-                throw new ValidationException($"Products not found: {string.Join(", ", missing)}.");
+                throw new ValidationException("One or more selected products do not exist or are not available.");
             }
 
+            var productsById = products.ToDictionary(product => product.Id);
             var insufficient = aggregated
                 .Where(line =>
                 {
-                    var product = products[line.ProductId];
+                    var product = productsById[line.ProductId];
                     return !product.IsPreorder && product.StockQuantity < line.Quantity;
                 })
                 .Select(line =>
                 {
-                    var product = products[line.ProductId];
-                    return $"{product.Title ?? product.Name} (запрошено {line.Quantity}, доступно {product.StockQuantity})";
+                    var product = productsById[line.ProductId];
+                    return $"{product.Title ?? product.Name} (requested {line.Quantity}, available {product.StockQuantity})";
                 })
                 .ToList();
+
             if (insufficient.Count > 0)
             {
-                throw new ValidationException($"Недостаточно товара: {string.Join("; ", insufficient)}.");
+                throw new ValidationException($"Not enough stock for: {string.Join("; ", insufficient)}.");
             }
-
-            await using var transaction = await _orderRepository.BeginTransactionAsync(cancellationToken);
 
             var order = new OrderDomain
             {
                 UserId = userId,
                 Status = OrderStatus.Pending,
-                RecipientName = dto.RecipientName.Trim(),
-                Phone = dto.Phone.Trim(),
-                ShippingAddress = dto.ShippingAddress.Trim(),
-                City = dto.City.Trim(),
-                Comment = string.IsNullOrWhiteSpace(dto.Comment) ? null : dto.Comment.Trim(),
+                RecipientName = NormalizeRequiredText(dto.RecipientName, "Recipient name"),
+                Phone = NormalizeRequiredText(dto.Phone, "Phone"),
+                ShippingAddress = NormalizeRequiredText(dto.ShippingAddress, "Shipping address"),
+                City = NormalizeRequiredText(dto.City, "City"),
+                Comment = NormalizeOptionalText(dto.Comment),
                 Items = aggregated.Select(line =>
                 {
-                    var product = products[line.ProductId];
+                    var product = productsById[line.ProductId];
                     return new OrderItemDomain
                     {
                         ProductId = product.Id,
@@ -134,33 +128,19 @@ namespace ProjectBackend.api.Services
             order.Subtotal = order.Items.Sum(item => item.UnitPrice * item.Quantity);
 
             var created = await _orderRepository.CreateAsync(order, cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+            await _actionLogService.RecordAsync(
+                "Create",
+                nameof(OrderDomain),
+                created.Id,
+                $"Created order {created.Id} with subtotal {created.Subtotal:0.00}.",
+                cancellationToken);
 
-            var loaded = await _orderRepository.GetByIdAsync(created.Id, cancellationToken);
-            return _mapper.Map<OrderDto>(loaded!);
+            return _mapper.Map<OrderDto>(created);
         }
 
         public async Task<OrderDto> PayAsync(int id, CancellationToken cancellationToken)
         {
-            for (var attempt = 1; ; attempt++)
-            {
-                try
-                {
-                    return await PayCoreAsync(id, cancellationToken);
-                }
-                catch (DbUpdateConcurrencyException) when (attempt < PayConcurrencyRetries)
-                {
-                    foreach (var entry in _dbContext.ChangeTracker.Entries().ToList())
-                    {
-                        entry.State = EntityState.Detached;
-                    }
-                }
-            }
-        }
-
-        private async Task<OrderDto> PayCoreAsync(int id, CancellationToken cancellationToken)
-        {
-            var order = EnsureFound(await _orderRepository.GetByIdAsync(id, cancellationToken), "Order", id);
+            var order = EnsureFound(await _orderRepository.GetTrackedByIdAsync(id, cancellationToken), "Order", id);
             EnsureCanAccess(order);
 
             if (order.Status != OrderStatus.Pending)
@@ -174,18 +154,17 @@ namespace ProjectBackend.api.Services
                 throw new ValidationException("Insufficient balance to pay for this order.");
             }
 
-            var productIds = order.Items.Select(i => i.ProductId).Distinct().ToList();
-            var trackedProducts = await _dbContext.Products
-                .Where(p => productIds.Contains(p.Id))
-                .ToDictionaryAsync(p => p.Id, cancellationToken);
+            var productIds = order.Items.Select(item => item.ProductId).Distinct().ToArray();
+            var trackedProducts = await _productRepository.GetTrackedByIdsAsync(productIds, cancellationToken);
+            if (trackedProducts.Count != productIds.Length)
+            {
+                throw new ValidationException("One or more ordered products no longer exist.");
+            }
 
+            var trackedProductsById = trackedProducts.ToDictionary(product => product.Id);
             foreach (var item in order.Items)
             {
-                if (!trackedProducts.TryGetValue(item.ProductId, out var product))
-                {
-                    throw new ValidationException($"Product {item.ProductId} not found.");
-                }
-
+                var product = trackedProductsById[item.ProductId];
                 if (product.IsPreorder)
                 {
                     continue;
@@ -194,7 +173,7 @@ namespace ProjectBackend.api.Services
                 if (product.StockQuantity < item.Quantity)
                 {
                     throw new ValidationException(
-                        $"Недостаточно товара \"{product.Title ?? product.Name}\": доступно {product.StockQuantity}, требуется {item.Quantity}.");
+                        $"Not enough stock for '{product.Title ?? product.Name}': available {product.StockQuantity}, required {item.Quantity}.");
                 }
 
                 product.StockQuantity -= item.Quantity;
@@ -202,17 +181,26 @@ namespace ProjectBackend.api.Services
 
             await using var transaction = await _orderRepository.BeginTransactionAsync(cancellationToken);
 
-            await _dbContext.SaveChangesAsync(cancellationToken);
             await _userRepository.AdjustBalanceAsync(order.UserId, -order.Subtotal, cancellationToken);
-            var updated = await _orderRepository.UpdateStatusAsync(id, OrderStatus.Paid, DateTime.UtcNow, cancellationToken);
+            order.Status = OrderStatus.Paid;
+            order.PaidAt = DateTime.UtcNow;
+            var updated = await _orderRepository.UpdateAsync(order, cancellationToken);
 
             await transaction.CommitAsync(cancellationToken);
-            return _mapper.Map<OrderDto>(updated!);
+
+            await _actionLogService.RecordAsync(
+                "Pay",
+                nameof(OrderDomain),
+                updated.Id,
+                $"Paid order {updated.Id} for {updated.Subtotal:0.00}.",
+                cancellationToken);
+
+            return _mapper.Map<OrderDto>(updated);
         }
 
         public async Task<OrderDto> CancelAsync(int id, CancellationToken cancellationToken)
         {
-            var order = EnsureFound(await _orderRepository.GetByIdAsync(id, cancellationToken), "Order", id);
+            var order = EnsureFound(await _orderRepository.GetTrackedByIdAsync(id, cancellationToken), "Order", id);
             EnsureCanAccess(order);
 
             if (order.Status is OrderStatus.Shipped or OrderStatus.Completed or OrderStatus.Cancelled)
@@ -224,29 +212,40 @@ namespace ProjectBackend.api.Services
 
             if (order.Status == OrderStatus.Paid)
             {
-                var productIds = order.Items.Select(i => i.ProductId).Distinct().ToList();
-                var trackedProducts = await _dbContext.Products
-                    .Where(p => productIds.Contains(p.Id))
-                    .ToDictionaryAsync(p => p.Id, cancellationToken);
+                var productIds = order.Items.Select(item => item.ProductId).Distinct().ToArray();
+                var trackedProducts = await _productRepository.GetTrackedByIdsAsync(productIds, cancellationToken);
+                var trackedProductsById = trackedProducts.ToDictionary(product => product.Id);
 
                 foreach (var item in order.Items)
                 {
-                    if (trackedProducts.TryGetValue(item.ProductId, out var product) && !product.IsPreorder)
+                    if (trackedProductsById.TryGetValue(item.ProductId, out var product) && !product.IsPreorder)
                     {
                         product.StockQuantity += item.Quantity;
                     }
                 }
 
-                await _dbContext.SaveChangesAsync(cancellationToken);
                 await _userRepository.AdjustBalanceAsync(order.UserId, order.Subtotal, cancellationToken);
             }
 
-            var updated = await _orderRepository.UpdateStatusAsync(id, OrderStatus.Cancelled, null, cancellationToken);
+            order.Status = OrderStatus.Cancelled;
+            var updated = await _orderRepository.UpdateAsync(order, cancellationToken);
+
             await transaction.CommitAsync(cancellationToken);
-            return _mapper.Map<OrderDto>(updated!);
+
+            await _actionLogService.RecordAsync(
+                "Cancel",
+                nameof(OrderDomain),
+                updated.Id,
+                $"Cancelled order {updated.Id}.",
+                cancellationToken);
+
+            return _mapper.Map<OrderDto>(updated);
         }
 
-        private async Task<PagedResult<OrderDto>> ListAsync(OrderListRequestDto request, int? userId, CancellationToken cancellationToken)
+        private async Task<PagedResult<OrderDto>> ListAsync(
+            OrderListRequestDto request,
+            int? userId,
+            CancellationToken cancellationToken)
         {
             var queryOptions = new OrderQueryOptions
             {
@@ -254,6 +253,7 @@ namespace ProjectBackend.api.Services
                 PageSize = QueryValidationHelper.NormalizePageSize(request.PageSize),
                 SortBy = QueryValidationHelper.NormalizeSortBy(request.SortBy, "createdat", "createdat", "subtotal", "status"),
                 SortDescending = QueryValidationHelper.NormalizeSortDescending(request.SortDirection),
+                Search = QueryValidationHelper.NormalizeSearch(request.Search),
                 Status = request.Status,
                 UserId = userId
             };
@@ -270,17 +270,19 @@ namespace ProjectBackend.api.Services
 
         private int RequireUserId()
         {
-            return _currentUser.UserId
+            return _currentUserContext.UserId
                 ?? throw new UnauthorizedAppException("Authentication is required.");
         }
 
         private void EnsureCanAccess(OrderDomain order)
         {
             var userId = RequireUserId();
-            if (order.UserId == userId) return;
-            if (_currentUser.Role == UserRole.Admin) return;
+            if (order.UserId == userId || _currentUserContext.Role == UserRole.Admin)
+            {
+                return;
+            }
 
-            throw new UnauthorizedAppException("You don't have access to this order.");
+            throw new UnauthorizedAppException("You do not have access to this order.");
         }
     }
 }

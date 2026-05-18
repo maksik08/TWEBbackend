@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using ProjectBackend.api.Filters;
+using ProjectBackend.api.Models.Domain;
 using ProjectBackend.api.Models.DTO;
 using ProjectBackend.api.Services;
 
@@ -7,11 +8,11 @@ namespace ProjectBackend.api.Controllers
 {
     /// <summary>
     /// Customer orders endpoints.
-    /// Read/write own orders: any authenticated user.
-    /// List all and force status changes: admin.
+    /// Read and write own orders: authenticated customer or admin.
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
+    [RoleAccess(UserRole.User, UserRole.Customer)]
     public class OrdersController : ControllerBase
     {
         private readonly IOrderService _orderService;
@@ -24,7 +25,6 @@ namespace ProjectBackend.api.Controllers
         /// <summary>
         /// Returns the current user's orders.
         /// </summary>
-        [UserAccess]
         [HttpGet("mine")]
         public async Task<IActionResult> GetMine([FromQuery] OrderListRequestDto request, CancellationToken cancellationToken)
         {
@@ -35,7 +35,6 @@ namespace ProjectBackend.api.Controllers
         /// <summary>
         /// Returns one order by id. Owner or admin only.
         /// </summary>
-        [UserAccess]
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById([FromRoute] int id, CancellationToken cancellationToken)
         {
@@ -44,9 +43,8 @@ namespace ProjectBackend.api.Controllers
         }
 
         /// <summary>
-        /// Creates a new pending order from current cart contents.
+        /// Creates a new pending order.
         /// </summary>
-        [UserAccess]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateOrderDto dto, CancellationToken cancellationToken)
         {
@@ -55,9 +53,8 @@ namespace ProjectBackend.api.Controllers
         }
 
         /// <summary>
-        /// Marks the pending order as paid (mock payment).
+        /// Marks the pending order as paid.
         /// </summary>
-        [UserAccess]
         [HttpPost("{id:int}/pay")]
         public async Task<IActionResult> Pay([FromRoute] int id, CancellationToken cancellationToken)
         {
@@ -68,7 +65,6 @@ namespace ProjectBackend.api.Controllers
         /// <summary>
         /// Cancels a pending or paid order.
         /// </summary>
-        [UserAccess]
         [HttpPost("{id:int}/cancel")]
         public async Task<IActionResult> Cancel([FromRoute] int id, CancellationToken cancellationToken)
         {

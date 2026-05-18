@@ -4,8 +4,9 @@ namespace ProjectBackend.api.Models.Domain
     {
         Pending = 0,
         Paid = 1,
-        Shipped = 2,
-        Completed = 3,
-        Cancelled = 4
+        Processing = 2,
+        Shipped = 3,
+        Completed = 4,
+        Cancelled = 5
     }
 }

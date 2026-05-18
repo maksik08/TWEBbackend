@@ -21,12 +21,16 @@ namespace ProjectBackend.api.Services
             }
         }
 
+        public string? Username => _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.Name);
+
         public UserRole? Role
         {
             get
             {
-                var claimValue = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.Role);
-                return Enum.TryParse<UserRole>(claimValue, ignoreCase: true, out var role) ? role : null;
+                var roleClaim = _httpContextAccessor.HttpContext?.User.FindFirstValue(ClaimTypes.Role);
+                return Enum.TryParse<UserRole>(roleClaim, ignoreCase: true, out var role)
+                    ? role
+                    : null;
             }
         }
     }

@@ -9,8 +9,10 @@ namespace ProjectBackend.api.Repositories
     {
         Task<PagedResult<OrderDomain>> GetAllAsync(OrderQueryOptions queryOptions, CancellationToken cancellationToken);
         Task<OrderDomain?> GetByIdAsync(int id, CancellationToken cancellationToken);
+        Task<OrderDomain?> GetTrackedByIdAsync(int id, CancellationToken cancellationToken);
         Task<OrderDomain> CreateAsync(OrderDomain order, CancellationToken cancellationToken);
-        Task<OrderDomain?> UpdateStatusAsync(int id, OrderStatus status, DateTime? paidAt, CancellationToken cancellationToken);
+        Task<OrderDomain> UpdateAsync(OrderDomain order, CancellationToken cancellationToken);
+        Task<IReadOnlyCollection<OrderDomain>> GetAllForReportAsync(CancellationToken cancellationToken);
         Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken);
     }
 }

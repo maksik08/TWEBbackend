@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using ProjectBackend.api.Models.Domain;
 
 namespace ProjectBackend.api.Data
@@ -17,6 +17,11 @@ namespace ProjectBackend.api.Data
         public DbSet<RefreshTokenDomain> RefreshTokens { get; set; }
         public DbSet<PasswordResetTokenDomain> PasswordResetTokens { get; set; }
         public DbSet<ContactMessageDomain> ContactMessages { get; set; }
+        public DbSet<ServiceRequestDomain> ServiceRequests { get; set; }
+        public DbSet<ServiceRequestCommentDomain> ServiceRequestComments { get; set; }
+        public DbSet<WorkPhotoDomain> WorkPhotos { get; set; }
+        public DbSet<NotificationDomain> Notifications { get; set; }
+        public DbSet<ActionLogDomain> ActionLogs { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -38,6 +43,7 @@ namespace ProjectBackend.api.Data
                 entity.Property(p => p.Price).HasColumnType("decimal(18,2)");
                 entity.Property(p => p.StockQuantity).HasDefaultValue(0);
                 entity.Property(p => p.IsPreorder).HasDefaultValue(false);
+                entity.Property(p => p.IsVisible).HasDefaultValue(true);
                 entity.Property(p => p.RowVersion).IsRowVersion();
                 entity.Property(p => p.CreatedAt).HasColumnType("datetime2");
                 entity.Property(p => p.UpdatedAt).HasColumnType("datetime2");
@@ -110,7 +116,7 @@ namespace ProjectBackend.api.Data
                 entity.Property(o => o.PaidAt).HasColumnType("datetime2");
 
                 entity.HasOne(o => o.User)
-                    .WithMany()
+                    .WithMany(user => user.Orders)
                     .HasForeignKey(o => o.UserId)
                     .OnDelete(DeleteBehavior.Restrict);
 
@@ -129,7 +135,7 @@ namespace ProjectBackend.api.Data
                 entity.Property(i => i.UnitPrice).HasColumnType("decimal(18,2)");
 
                 entity.HasOne(i => i.Product)
-                    .WithMany()
+                    .WithMany(product => product.OrderItems)
                     .HasForeignKey(i => i.ProductId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
@@ -183,6 +189,94 @@ namespace ProjectBackend.api.Data
 
                 entity.HasIndex(m => m.CreatedAt);
                 entity.HasIndex(m => m.IsRead);
+            });
+
+            modelBuilder.Entity<ServiceRequestDomain>(entity =>
+            {
+                entity.Property(request => request.RequestNumber).HasMaxLength(32);
+                entity.Property(request => request.ServiceTitle).HasMaxLength(200);
+                entity.Property(request => request.Description).HasMaxLength(1000);
+                entity.Property(request => request.Address).HasMaxLength(400);
+                entity.Property(request => request.ContactPhone).HasMaxLength(50);
+                entity.Property(request => request.CompletionReport).HasMaxLength(2000);
+                entity.Property(request => request.Status).HasConversion<string>();
+                entity.Property(request => request.CreatedAt).HasColumnType("datetime2");
+                entity.Property(request => request.UpdatedAt).HasColumnType("datetime2");
+                entity.HasIndex(request => request.RequestNumber).IsUnique();
+
+                entity.HasOne(request => request.Customer)
+                    .WithMany(user => user.ServiceRequests)
+                    .HasForeignKey(request => request.CustomerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(request => request.Installer)
+                    .WithMany(user => user.AssignedServiceRequests)
+                    .HasForeignKey(request => request.InstallerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(request => request.Manager)
+                    .WithMany(user => user.ManagedServiceRequests)
+                    .HasForeignKey(request => request.ManagerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<ServiceRequestCommentDomain>(entity =>
+            {
+                entity.Property(comment => comment.Message).HasMaxLength(1000);
+                entity.Property(comment => comment.CreatedAt).HasColumnType("datetime2");
+                entity.Property(comment => comment.UpdatedAt).HasColumnType("datetime2");
+
+                entity.HasOne(comment => comment.ServiceRequest)
+                    .WithMany(request => request.Comments)
+                    .HasForeignKey(comment => comment.ServiceRequestId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(comment => comment.AuthorUser)
+                    .WithMany(user => user.ServiceRequestComments)
+                    .HasForeignKey(comment => comment.AuthorUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<WorkPhotoDomain>(entity =>
+            {
+                entity.Property(photo => photo.FileName).HasMaxLength(260);
+                entity.Property(photo => photo.FilePath).HasMaxLength(500);
+                entity.Property(photo => photo.CreatedAt).HasColumnType("datetime2");
+                entity.Property(photo => photo.UpdatedAt).HasColumnType("datetime2");
+
+                entity.HasOne(photo => photo.ServiceRequest)
+                    .WithMany(request => request.WorkPhotos)
+                    .HasForeignKey(photo => photo.ServiceRequestId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<NotificationDomain>(entity =>
+            {
+                entity.Property(notification => notification.Title).HasMaxLength(200);
+                entity.Property(notification => notification.Message).HasMaxLength(1000);
+                entity.Property(notification => notification.RelatedEntityType).HasMaxLength(100);
+                entity.Property(notification => notification.CreatedAt).HasColumnType("datetime2");
+                entity.Property(notification => notification.UpdatedAt).HasColumnType("datetime2");
+
+                entity.HasOne(notification => notification.User)
+                    .WithMany(user => user.Notifications)
+                    .HasForeignKey(notification => notification.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<ActionLogDomain>(entity =>
+            {
+                entity.Property(log => log.ActorRole).HasMaxLength(50);
+                entity.Property(log => log.EntityType).HasMaxLength(100);
+                entity.Property(log => log.Action).HasMaxLength(100);
+                entity.Property(log => log.Details).HasMaxLength(2000);
+                entity.Property(log => log.CreatedAt).HasColumnType("datetime2");
+                entity.Property(log => log.UpdatedAt).HasColumnType("datetime2");
+
+                entity.HasOne(log => log.ActorUser)
+                    .WithMany(user => user.ActionLogs)
+                    .HasForeignKey(log => log.ActorUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             base.OnModelCreating(modelBuilder);

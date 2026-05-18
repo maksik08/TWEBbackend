@@ -9,6 +9,7 @@ namespace ProjectBackend.api.Models.DTO
         public decimal Price { get; set; }
         public int StockQuantity { get; set; }
         public bool IsPreorder { get; set; }
+        public bool IsVisible { get; set; }
         public string Availability { get; set; } = "in-stock";
         public int? CategoryId { get; set; }
         public string? Category { get; set; }

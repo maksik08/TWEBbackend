@@ -21,7 +21,15 @@ namespace ProjectBackend.api.Filters
             }
 
             var role = GetRole(context);
-            if (!HasAnyRole(role, UserRole.User, UserRole.Customer, UserRole.Admin))
+            if (!HasAnyRole(
+                    role,
+                    UserRole.User,
+                    UserRole.Customer,
+                    UserRole.Admin,
+                    UserRole.Manager,
+                    UserRole.Installer,
+                    UserRole.WarehouseManager,
+                    UserRole.Support))
             {
                 context.Result = BuildResult(StatusCodes.Status403Forbidden, "User access is required.");
             }

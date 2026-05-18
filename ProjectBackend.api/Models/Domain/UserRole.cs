@@ -5,6 +5,10 @@ namespace ProjectBackend.api.Models.Domain
         Guest = 0,
         User = 1,
         Customer = User,
-        Admin = 2
+        Admin = 2,
+        Manager = 3,
+        Installer = 4,
+        WarehouseManager = 5,
+        Support = 6
     }
 }
