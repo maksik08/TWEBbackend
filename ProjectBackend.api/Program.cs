@@ -107,6 +107,7 @@ builder.Services.AddScoped<IOrderRepository, OrderRepository>();
 builder.Services.AddScoped<IServiceRequestRepository, ServiceRequestRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IActionLogRepository, ActionLogRepository>();
+builder.Services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
 builder.Services.AddScoped<IContactMessageRepository, ContactMessageRepository>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -119,6 +120,7 @@ builder.Services.AddScoped<IManagerService, ManagerService>();
 builder.Services.AddScoped<IInstallerService, InstallerService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IActionLogService, ActionLogService>();
+builder.Services.AddScoped<IPaymentTransactionService, PaymentTransactionService>();
 builder.Services.AddScoped<IWorkPhotoStorageService, LocalWorkPhotoStorageService>();
 builder.Services.AddScoped<IContactService, ContactService>();
 builder.Services.AddHttpContextAccessor();

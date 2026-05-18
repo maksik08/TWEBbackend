@@ -22,6 +22,7 @@ namespace ProjectBackend.api.Data
         public DbSet<WorkPhotoDomain> WorkPhotos { get; set; }
         public DbSet<NotificationDomain> Notifications { get; set; }
         public DbSet<ActionLogDomain> ActionLogs { get; set; }
+        public DbSet<PaymentTransactionDomain> PaymentTransactions { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -277,6 +278,33 @@ namespace ProjectBackend.api.Data
                     .WithMany(user => user.ActionLogs)
                     .HasForeignKey(log => log.ActorUserId)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<PaymentTransactionDomain>(entity =>
+            {
+                entity.Property(payment => payment.Type).HasConversion<string>();
+                entity.Property(payment => payment.Status).HasConversion<string>();
+                entity.Property(payment => payment.Method).HasConversion<string>();
+                entity.Property(payment => payment.Amount).HasColumnType("decimal(18,2)");
+                entity.Property(payment => payment.Currency).HasMaxLength(3);
+                entity.Property(payment => payment.ExternalReference).HasMaxLength(100);
+                entity.Property(payment => payment.Description).HasMaxLength(500);
+                entity.Property(payment => payment.CreatedAt).HasColumnType("datetime2");
+                entity.Property(payment => payment.UpdatedAt).HasColumnType("datetime2");
+
+                entity.HasOne(payment => payment.User)
+                    .WithMany(user => user.PaymentTransactions)
+                    .HasForeignKey(payment => payment.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(payment => payment.Order)
+                    .WithMany(order => order.PaymentTransactions)
+                    .HasForeignKey(payment => payment.OrderId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(payment => payment.UserId);
+                entity.HasIndex(payment => payment.OrderId);
+                entity.HasIndex(payment => payment.CreatedAt);
             });
 
             base.OnModelCreating(modelBuilder);

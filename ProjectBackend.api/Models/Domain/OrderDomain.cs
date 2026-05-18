@@ -36,5 +36,7 @@ namespace ProjectBackend.api.Models.Domain
         public string? Comment { get; set; }
 
         public ICollection<OrderItemDomain> Items { get; set; } = new List<OrderItemDomain>();
+
+        public ICollection<PaymentTransactionDomain> PaymentTransactions { get; set; } = new List<PaymentTransactionDomain>();
     }
 }

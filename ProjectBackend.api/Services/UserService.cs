@@ -11,12 +11,18 @@ namespace ProjectBackend.api.Services
     public class UserService : ApplicationServiceBase, IUserService
     {
         private readonly IUserRepository _repository;
+        private readonly IPaymentTransactionService _paymentTransactionService;
         private readonly IMapper _mapper;
         private readonly ICurrentUserContext _currentUserContext;
 
-        public UserService(IUserRepository repository, IMapper mapper, ICurrentUserContext currentUserContext)
+        public UserService(
+            IUserRepository repository,
+            IPaymentTransactionService paymentTransactionService,
+            IMapper mapper,
+            ICurrentUserContext currentUserContext)
         {
             _repository = repository;
+            _paymentTransactionService = paymentTransactionService;
             _mapper = mapper;
             _currentUserContext = currentUserContext;
         }
@@ -132,6 +138,18 @@ namespace ProjectBackend.api.Services
 
             var updated = await _repository.AdjustBalanceAsync(id, amount, cancellationToken);
             updated = EnsureFound(updated, "User", id);
+
+            await _paymentTransactionService.RecordAsync(
+                id,
+                amount,
+                PaymentTransactionType.BalanceTopUp,
+                PaymentMethod.ManualTopUp,
+                PaymentTransactionStatus.Completed,
+                null,
+                "Balance top-up",
+                null,
+                cancellationToken);
+
             return _mapper.Map<UserDto>(updated);
         }
 

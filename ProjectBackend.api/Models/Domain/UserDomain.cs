@@ -41,5 +41,7 @@ namespace ProjectBackend.api.Models.Domain
         public ICollection<NotificationDomain> Notifications { get; set; } = new List<NotificationDomain>();
 
         public ICollection<ActionLogDomain> ActionLogs { get; set; } = new List<ActionLogDomain>();
+
+        public ICollection<PaymentTransactionDomain> PaymentTransactions { get; set; } = new List<PaymentTransactionDomain>();
     }
 }

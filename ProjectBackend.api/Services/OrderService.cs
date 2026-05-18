@@ -13,6 +13,7 @@ namespace ProjectBackend.api.Services
         private readonly IOrderRepository _orderRepository;
         private readonly IUserRepository _userRepository;
         private readonly IProductRepository _productRepository;
+        private readonly IPaymentTransactionService _paymentTransactionService;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly IActionLogService _actionLogService;
         private readonly IMapper _mapper;
@@ -21,6 +22,7 @@ namespace ProjectBackend.api.Services
             IOrderRepository orderRepository,
             IUserRepository userRepository,
             IProductRepository productRepository,
+            IPaymentTransactionService paymentTransactionService,
             ICurrentUserContext currentUserContext,
             IActionLogService actionLogService,
             IMapper mapper)
@@ -28,6 +30,7 @@ namespace ProjectBackend.api.Services
             _orderRepository = orderRepository;
             _userRepository = userRepository;
             _productRepository = productRepository;
+            _paymentTransactionService = paymentTransactionService;
             _currentUserContext = currentUserContext;
             _actionLogService = actionLogService;
             _mapper = mapper;
@@ -186,6 +189,17 @@ namespace ProjectBackend.api.Services
             order.PaidAt = DateTime.UtcNow;
             var updated = await _orderRepository.UpdateAsync(order, cancellationToken);
 
+            await _paymentTransactionService.RecordAsync(
+                order.UserId,
+                order.Subtotal,
+                PaymentTransactionType.OrderPayment,
+                PaymentMethod.InternalBalance,
+                PaymentTransactionStatus.Completed,
+                order.Id,
+                $"Payment for order {order.Id}",
+                null,
+                cancellationToken);
+
             await transaction.CommitAsync(cancellationToken);
 
             await _actionLogService.RecordAsync(
@@ -229,6 +243,20 @@ namespace ProjectBackend.api.Services
 
             order.Status = OrderStatus.Cancelled;
             var updated = await _orderRepository.UpdateAsync(order, cancellationToken);
+
+            if (updated.PaidAt.HasValue)
+            {
+                await _paymentTransactionService.RecordAsync(
+                    order.UserId,
+                    order.Subtotal,
+                    PaymentTransactionType.Refund,
+                    PaymentMethod.InternalBalance,
+                    PaymentTransactionStatus.Completed,
+                    order.Id,
+                    $"Refund for cancelled order {order.Id}",
+                    null,
+                    cancellationToken);
+            }
 
             await transaction.CommitAsync(cancellationToken);
 

@@ -552,6 +552,68 @@ namespace ProjectBackend.Tests.TestInfrastructure
         }
     }
 
+    internal sealed class FakePaymentTransactionService : IPaymentTransactionService
+    {
+        public List<PaymentTransactionDto> Payments { get; } = new();
+
+        public Task<PagedResult<PaymentTransactionDto>> GetMyPaymentsAsync(PaymentTransactionListRequestDto request, CancellationToken cancellationToken)
+        {
+            IReadOnlyCollection<PaymentTransactionDto> items = Payments.ToList();
+            return Task.FromResult(new PagedResult<PaymentTransactionDto>
+            {
+                Items = items,
+                TotalCount = items.Count,
+                Page = request.Page,
+                PageSize = request.PageSize
+            });
+        }
+
+        public Task<PagedResult<PaymentTransactionDto>> GetAllAsync(PaymentTransactionListRequestDto request, CancellationToken cancellationToken)
+        {
+            IReadOnlyCollection<PaymentTransactionDto> items = Payments.ToList();
+            return Task.FromResult(new PagedResult<PaymentTransactionDto>
+            {
+                Items = items,
+                TotalCount = items.Count,
+                Page = request.Page,
+                PageSize = request.PageSize
+            });
+        }
+
+        public Task<PaymentTransactionDto> GetByIdAsync(int id, CancellationToken cancellationToken)
+        {
+            return Task.FromResult(Payments.First(payment => payment.Id == id));
+        }
+
+        public Task<PaymentTransactionDto> RecordAsync(
+            int userId,
+            decimal amount,
+            PaymentTransactionType type,
+            PaymentMethod method,
+            PaymentTransactionStatus status,
+            int? orderId,
+            string? description,
+            string? externalReference,
+            CancellationToken cancellationToken)
+        {
+            var payment = new PaymentTransactionDto
+            {
+                Id = Payments.Count + 1,
+                UserId = userId,
+                OrderId = orderId,
+                Amount = amount,
+                Type = type,
+                Method = method,
+                Status = status,
+                Description = description,
+                ExternalReference = externalReference
+            };
+
+            Payments.Add(payment);
+            return Task.FromResult(payment);
+        }
+    }
+
     internal sealed class FakeImageStorageService : IImageStorageService
     {
         public Task<string> SaveProductImageAsync(Microsoft.AspNetCore.Http.IFormFile file, CancellationToken cancellationToken)
