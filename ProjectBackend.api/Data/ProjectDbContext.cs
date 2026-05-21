@@ -23,6 +23,7 @@ namespace ProjectBackend.api.Data
         public DbSet<NotificationDomain> Notifications { get; set; }
         public DbSet<ActionLogDomain> ActionLogs { get; set; }
         public DbSet<PaymentTransactionDomain> PaymentTransactions { get; set; }
+        public DbSet<IdempotencyRecordDomain> IdempotencyRecords { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -305,6 +306,20 @@ namespace ProjectBackend.api.Data
                 entity.HasIndex(payment => payment.UserId);
                 entity.HasIndex(payment => payment.OrderId);
                 entity.HasIndex(payment => payment.CreatedAt);
+            });
+
+            modelBuilder.Entity<IdempotencyRecordDomain>(entity =>
+            {
+                entity.Property(r => r.Key).HasMaxLength(100).IsRequired();
+                entity.Property(r => r.Method).HasMaxLength(10).IsRequired();
+                entity.Property(r => r.Path).HasMaxLength(200).IsRequired();
+                entity.Property(r => r.ContentType).HasMaxLength(100).IsRequired();
+                entity.Property(r => r.ResponseBody).HasColumnType("nvarchar(max)").IsRequired();
+                entity.Property(r => r.CreatedAt).HasColumnType("datetime2");
+                entity.Property(r => r.ExpiresAt).HasColumnType("datetime2");
+
+                entity.HasIndex(r => new { r.UserId, r.Key }).IsUnique();
+                entity.HasIndex(r => r.ExpiresAt);
             });
 
             base.OnModelCreating(modelBuilder);
