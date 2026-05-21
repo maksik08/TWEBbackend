@@ -1,7 +1,7 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using ProjectBackend.api.Filters;
-using ProjectBackend.api.Models.DTO;
-using ProjectBackend.api.Services;
+using ProjectBackend.BusinessLogic.Dto;
+using ProjectBackend.BusinessLogic.Services;
 
 namespace ProjectBackend.api.Controllers
 {
@@ -57,7 +57,7 @@ namespace ProjectBackend.api.Controllers
         {
             if (!_currentUserContext.UserId.HasValue)
             {
-                throw new Exceptions.UnauthorizedAppException("Invalid user identity.");
+                throw new ProjectBackend.BusinessLogic.Exceptions.UnauthorizedAppException("Invalid user identity.");
             }
 
             return _currentUserContext.UserId.Value;

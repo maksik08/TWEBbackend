@@ -1,4 +1,4 @@
-using System.Reflection;
+﻿using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -9,13 +9,13 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using ProjectBackend.api.Configuration;
-using ProjectBackend.api.Data;
-using ProjectBackend.api.Mappings;
+using ProjectBackend.BusinessLogic.Configuration;
+using ProjectBackend.DataAccess;
+using ProjectBackend.BusinessLogic.Mappings;
 using ProjectBackend.api.Middleware;
-using ProjectBackend.api.Models.DTO;
-using ProjectBackend.api.Repositories;
-using ProjectBackend.api.Services;
+using ProjectBackend.BusinessLogic.Dto;
+using ProjectBackend.DataAccess.Repositories;
+using ProjectBackend.BusinessLogic.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 

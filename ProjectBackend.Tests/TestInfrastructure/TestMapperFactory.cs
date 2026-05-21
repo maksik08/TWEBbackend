@@ -1,6 +1,6 @@
-using AutoMapper;
+﻿using AutoMapper;
 using Microsoft.Extensions.Logging.Abstractions;
-using ProjectBackend.api.Mappings;
+using ProjectBackend.BusinessLogic.Mappings;
 
 namespace ProjectBackend.Tests.TestInfrastructure
 {

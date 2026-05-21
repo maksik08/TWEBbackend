@@ -1,6 +1,6 @@
-using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Filters;
-using ProjectBackend.api.Models.Domain;
+using ProjectBackend.Domain.Entities;
 
 namespace ProjectBackend.api.Filters
 {

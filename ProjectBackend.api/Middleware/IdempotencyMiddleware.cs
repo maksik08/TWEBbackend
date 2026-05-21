@@ -1,8 +1,8 @@
-using System.Text.Json;
-using ProjectBackend.api.Models.Domain;
-using ProjectBackend.api.Models.DTO;
-using ProjectBackend.api.Repositories;
-using ProjectBackend.api.Services;
+﻿using System.Text.Json;
+using ProjectBackend.Domain.Entities;
+using ProjectBackend.BusinessLogic.Dto;
+using ProjectBackend.DataAccess.Repositories;
+using ProjectBackend.BusinessLogic.Services;
 
 namespace ProjectBackend.api.Middleware
 {

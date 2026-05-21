@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -22,6 +22,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ProjectBackend.api\ProjectBackend.api.csproj" />
+    <ProjectReference Include="..\ProjectBackend.Domain\ProjectBackend.Domain.csproj" />
+    <ProjectReference Include="..\ProjectBackend.DataAccess\ProjectBackend.DataAccess.csproj" />
+    <ProjectReference Include="..\ProjectBackend.BusinessLogic\ProjectBackend.BusinessLogic.csproj" />
   </ItemGroup>
 
 </Project>

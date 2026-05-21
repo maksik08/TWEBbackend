@@ -1,9 +1,10 @@
-using ProjectBackend.api.Models.Common;
-using ProjectBackend.api.Models.Domain;
-using ProjectBackend.api.Models.DTO;
-using ProjectBackend.api.Models.Query;
-using ProjectBackend.api.Repositories;
-using ProjectBackend.api.Services;
+﻿using ProjectBackend.Domain.Common;
+using ProjectBackend.BusinessLogic.Common;
+using ProjectBackend.Domain.Entities;
+using ProjectBackend.BusinessLogic.Dto;
+using ProjectBackend.Domain.Query;
+using ProjectBackend.DataAccess.Repositories;
+using ProjectBackend.BusinessLogic.Services;
 using Microsoft.EntityFrameworkCore.Storage;
 
 namespace ProjectBackend.Tests.TestInfrastructure

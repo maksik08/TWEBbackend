@@ -1,9 +1,9 @@
-using System.Text;
+﻿using System.Text;
 using Microsoft.AspNetCore.Http;
-using ProjectBackend.api.Exceptions;
-using ProjectBackend.api.Models.Domain;
-using ProjectBackend.api.Models.DTO;
-using ProjectBackend.api.Services;
+using ProjectBackend.BusinessLogic.Exceptions;
+using ProjectBackend.Domain.Entities;
+using ProjectBackend.BusinessLogic.Dto;
+using ProjectBackend.BusinessLogic.Services;
 using ProjectBackend.Tests.TestInfrastructure;
 
 namespace ProjectBackend.Tests.Services

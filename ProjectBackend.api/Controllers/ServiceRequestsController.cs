@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using ProjectBackend.api.Filters;
-using ProjectBackend.api.Models.Domain;
-using ProjectBackend.api.Models.DTO;
-using ProjectBackend.api.Services;
+using ProjectBackend.Domain.Entities;
+using ProjectBackend.BusinessLogic.Dto;
+using ProjectBackend.BusinessLogic.Services;
 
 namespace ProjectBackend.api.Controllers
 {

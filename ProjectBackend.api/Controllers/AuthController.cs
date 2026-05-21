@@ -1,16 +1,17 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using ProjectBackend.api.Filters;
-using ProjectBackend.api.Models.Common;
-using ProjectBackend.api.Models.DTO;
-using ProjectBackend.api.Services;
+using ProjectBackend.Domain.Common;
+using ProjectBackend.BusinessLogic.Common;
+using ProjectBackend.BusinessLogic.Dto;
+using ProjectBackend.BusinessLogic.Services;
 
 namespace ProjectBackend.api.Controllers
 {
     /// <summary>
     /// Authentication endpoints.
     /// Login/Register: guest only.
-    /// Refresh/Logout: any caller — authorization is performed via the refresh-token cookie.
+    /// Refresh/Logout: any caller вЂ” authorization is performed via the refresh-token cookie.
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]

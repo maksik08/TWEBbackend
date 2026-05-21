@@ -1,7 +1,7 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using ProjectBackend.api.Data;
-using ProjectBackend.api.Models.Domain;
+using ProjectBackend.DataAccess;
+using ProjectBackend.Domain.Entities;
 
 namespace ProjectBackend.Tests.Data
 {

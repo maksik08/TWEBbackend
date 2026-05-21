@@ -1,6 +1,6 @@
-using System.Text.Json;
-using ProjectBackend.api.Exceptions;
-using ProjectBackend.api.Models.DTO;
+﻿using System.Text.Json;
+using ProjectBackend.BusinessLogic.Exceptions;
+using ProjectBackend.BusinessLogic.Dto;
 
 namespace ProjectBackend.api.Middleware
 {
