@@ -232,6 +232,11 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseRateLimiter();
 
+app.UseWhen(
+    ctx => HttpMethods.IsPost(ctx.Request.Method)
+        && ctx.Request.Path.StartsWithSegments("/api/orders", StringComparison.OrdinalIgnoreCase),
+    branch => branch.UseIdempotency());
+
 app.MapHealthChecks("/health");
 app.MapHealthChecks("/health/ready", new HealthCheckOptions
 {
