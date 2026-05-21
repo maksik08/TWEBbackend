@@ -113,6 +113,7 @@ builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 builder.Services.AddScoped<IActionLogRepository, ActionLogRepository>();
 builder.Services.AddScoped<IPaymentTransactionRepository, PaymentTransactionRepository>();
 builder.Services.AddScoped<IContactMessageRepository, ContactMessageRepository>();
+builder.Services.AddScoped<IIdempotencyStore, IdempotencyStore>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
