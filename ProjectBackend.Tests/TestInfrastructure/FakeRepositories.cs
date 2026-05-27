@@ -120,6 +120,39 @@ namespace ProjectBackend.Tests.TestInfrastructure
         }
     }
 
+    internal sealed class FakeProductReviewRepository : IProductReviewRepository
+    {
+        public List<ProductReviewDomain> Reviews { get; } = new();
+
+        public Task<IReadOnlyCollection<ProductReviewDomain>> GetByProductIdAsync(int productId, CancellationToken cancellationToken)
+        {
+            IReadOnlyCollection<ProductReviewDomain> items = Reviews
+                .Where(review => review.ProductId == productId)
+                .OrderByDescending(review => review.CreatedAt)
+                .ToList();
+            return Task.FromResult(items);
+        }
+
+        public Task<ProductReviewDomain?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
+            Task.FromResult(Reviews.FirstOrDefault(review => review.Id == id));
+
+        public Task<bool> ExistsByUserAndProductAsync(int userId, int productId, CancellationToken cancellationToken) =>
+            Task.FromResult(Reviews.Any(review => review.UserId == userId && review.ProductId == productId));
+
+        public Task<ProductReviewDomain> CreateAsync(ProductReviewDomain review, CancellationToken cancellationToken)
+        {
+            review.Id = Reviews.Count + 1;
+            Reviews.Add(review);
+            return Task.FromResult(review);
+        }
+
+        public Task DeleteAsync(ProductReviewDomain review, CancellationToken cancellationToken)
+        {
+            Reviews.Remove(review);
+            return Task.CompletedTask;
+        }
+    }
+
     internal sealed class FakeCategoryRepository : ICategoryRepository
     {
         public List<CategoryDomain> Categories { get; } = new();

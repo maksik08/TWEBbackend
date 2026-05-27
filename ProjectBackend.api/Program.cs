@@ -93,6 +93,8 @@ builder.Services.AddScoped<IDatabaseInitializer, DatabaseInitializer>();
 
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<IProductReviewRepository, ProductReviewRepository>();
+builder.Services.AddScoped<IProductReviewService, ProductReviewService>();
 builder.Services.AddSingleton<IImageStorageService, ImageStorageService>();
 
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();

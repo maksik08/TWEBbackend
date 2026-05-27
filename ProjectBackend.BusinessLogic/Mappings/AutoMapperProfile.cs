@@ -72,6 +72,10 @@ namespace ProjectBackend.BusinessLogic.Mappings
             CreateMap<PaymentTransactionDomain, PaymentTransactionDto>()
                 .ForMember(dest => dest.Username,
                     opt => opt.MapFrom(src => src.User != null ? src.User.Username : null));
+
+            CreateMap<ProductReviewDomain, ProductReviewDto>()
+                .ForMember(dest => dest.AuthorUsername,
+                    opt => opt.MapFrom(src => src.User != null ? src.User.Username : string.Empty));
         }
     }
 }
