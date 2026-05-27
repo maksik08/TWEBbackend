@@ -43,5 +43,7 @@ namespace ProjectBackend.Domain.Entities
         public ICollection<ActionLogDomain> ActionLogs { get; set; } = new List<ActionLogDomain>();
 
         public ICollection<PaymentTransactionDomain> PaymentTransactions { get; set; } = new List<PaymentTransactionDomain>();
+
+        public ICollection<ProductReviewDomain> ProductReviews { get; set; } = new List<ProductReviewDomain>();
     }
 }

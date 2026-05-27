@@ -53,6 +53,7 @@ namespace ProjectBackend.DataAccess
         public DbSet<ActionLogDomain> ActionLogs { get; set; }
         public DbSet<PaymentTransactionDomain> PaymentTransactions { get; set; }
         public DbSet<IdempotencyRecordDomain> IdempotencyRecords { get; set; }
+        public DbSet<ProductReviewDomain> ProductReviews { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -365,6 +366,26 @@ namespace ProjectBackend.DataAccess
 
                 entity.HasIndex(r => new { r.UserId, r.Key }).IsUnique();
                 entity.HasIndex(r => r.ExpiresAt);
+            });
+
+            modelBuilder.Entity<ProductReviewDomain>(entity =>
+            {
+                entity.Property(review => review.Comment).HasMaxLength(2000).IsRequired();
+                entity.Property(review => review.CreatedAt).HasColumnType("datetime2");
+                entity.Property(review => review.UpdatedAt).HasColumnType("datetime2");
+
+                entity.HasOne(review => review.Product)
+                    .WithMany(product => product.Reviews)
+                    .HasForeignKey(review => review.ProductId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(review => review.User)
+                    .WithMany(user => user.ProductReviews)
+                    .HasForeignKey(review => review.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(review => review.ProductId);
+                entity.HasIndex(review => new { review.UserId, review.ProductId }).IsUnique();
             });
 
             base.OnModelCreating(modelBuilder);

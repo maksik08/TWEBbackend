@@ -64,5 +64,7 @@ namespace ProjectBackend.Domain.Entities
         public SupplierDomain? Supplier { get; set; }
 
         public ICollection<OrderItemDomain> OrderItems { get; set; } = new List<OrderItemDomain>();
+
+        public ICollection<ProductReviewDomain> Reviews { get; set; } = new List<ProductReviewDomain>();
     }
 }
