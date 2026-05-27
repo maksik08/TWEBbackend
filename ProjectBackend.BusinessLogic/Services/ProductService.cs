@@ -86,6 +86,15 @@ namespace ProjectBackend.BusinessLogic.Services
             entity.Name = normalizedName;
             entity.Title = NormalizeOptionalText(dto.Title);
             entity.Image = NormalizeOptionalText(dto.Image);
+            entity.Brand = NormalizeOptionalText(dto.Brand);
+            entity.Sku = NormalizeOptionalText(dto.Sku);
+            entity.ShortDescription = NormalizeOptionalText(dto.ShortDescription);
+            entity.Description = NormalizeOptionalText(dto.Description);
+            entity.Warranty = NormalizeOptionalText(dto.Warranty);
+            entity.Technology = NormalizeStringList(dto.Technology);
+            entity.KeyFeatures = NormalizeStringList(dto.KeyFeatures);
+            entity.PackageContents = NormalizeStringList(dto.PackageContents);
+            entity.Specifications = NormalizeSpecifications(dto.Specifications);
             entity.IsVisible = dto.IsVisible;
 
             var created = await _repository.CreateAsync(entity, cancellationToken);
@@ -103,11 +112,44 @@ namespace ProjectBackend.BusinessLogic.Services
             entity.Name = normalizedName;
             entity.Title = NormalizeOptionalText(dto.Title);
             entity.Image = NormalizeOptionalText(dto.Image);
+            entity.Brand = NormalizeOptionalText(dto.Brand);
+            entity.Sku = NormalizeOptionalText(dto.Sku);
+            entity.ShortDescription = NormalizeOptionalText(dto.ShortDescription);
+            entity.Description = NormalizeOptionalText(dto.Description);
+            entity.Warranty = NormalizeOptionalText(dto.Warranty);
+            entity.Technology = NormalizeStringList(dto.Technology);
+            entity.KeyFeatures = NormalizeStringList(dto.KeyFeatures);
+            entity.PackageContents = NormalizeStringList(dto.PackageContents);
+            entity.Specifications = NormalizeSpecifications(dto.Specifications);
             entity.IsVisible = dto.IsVisible;
 
             var updated = await _repository.UpdateAsync(id, entity, cancellationToken);
             updated = EnsureFound(updated, "Product", id);
             return _mapper.Map<ProductDto>(updated);
+        }
+
+        private static List<string> NormalizeStringList(IEnumerable<string>? values)
+        {
+            if (values is null) return new List<string>();
+            return values
+                .Where(v => !string.IsNullOrWhiteSpace(v))
+                .Select(v => v.Trim())
+                .ToList();
+        }
+
+        private static List<ProductSpecification> NormalizeSpecifications(IEnumerable<ProductSpecificationDto>? values)
+        {
+            if (values is null) return new List<ProductSpecification>();
+            return values
+                .Where(spec => spec is not null
+                    && !string.IsNullOrWhiteSpace(spec.Label)
+                    && !string.IsNullOrWhiteSpace(spec.Value))
+                .Select(spec => new ProductSpecification
+                {
+                    Label = spec.Label.Trim(),
+                    Value = spec.Value.Trim(),
+                })
+                .ToList();
         }
 
         public async Task<ProductDto> DeleteAsync(int id, CancellationToken cancellationToken)

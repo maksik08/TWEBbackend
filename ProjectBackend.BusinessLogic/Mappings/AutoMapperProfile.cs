@@ -13,15 +13,22 @@ namespace ProjectBackend.BusinessLogic.Mappings
                     opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : null))
                 .ForMember(dest => dest.Supplier,
                     opt => opt.MapFrom(src => src.Supplier != null ? src.Supplier.Name : null))
+                .ForMember(dest => dest.AvailabilityState,
+                    opt => opt.MapFrom(src => src.Availability))
                 .ForMember(dest => dest.Availability,
                     opt => opt.MapFrom(src =>
                         src.IsPreorder ? "preorder"
                         : src.StockQuantity <= 0 ? "out-of-stock"
-                        : src.StockQuantity <= 5 ? "limited"
+                        : src.Availability == ProductAvailability.Limited ? "limited"
+                        : src.Availability == ProductAvailability.Preorder ? "preorder"
+                        : src.Availability == ProductAvailability.OutOfStock ? "out-of-stock"
                         : "in-stock"));
+            CreateMap<ProductSpecification, ProductSpecificationDto>().ReverseMap();
             CreateMap<ProductDto, ProductsDomain>()
                 .ForMember(dest => dest.Category, opt => opt.Ignore())
                 .ForMember(dest => dest.Supplier, opt => opt.Ignore())
+                .ForMember(dest => dest.Availability,
+                    opt => opt.MapFrom(src => src.AvailabilityState))
                 .ForMember(dest => dest.RowVersion, opt => opt.Ignore());
             CreateMap<CreateProductDto, ProductsDomain>();
             CreateMap<UpdateProductDto, ProductsDomain>();

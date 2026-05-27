@@ -89,6 +89,16 @@ namespace ProjectBackend.Tests.TestInfrastructure
             existing.Name = product.Name;
             existing.Title = product.Title;
             existing.Image = product.Image;
+            existing.Brand = product.Brand;
+            existing.Sku = product.Sku;
+            existing.ShortDescription = product.ShortDescription;
+            existing.Description = product.Description;
+            existing.Warranty = product.Warranty;
+            existing.Availability = product.Availability;
+            existing.Technology = product.Technology;
+            existing.KeyFeatures = product.KeyFeatures;
+            existing.PackageContents = product.PackageContents;
+            existing.Specifications = product.Specifications;
             existing.Price = product.Price;
             existing.StockQuantity = product.StockQuantity;
             existing.IsPreorder = product.IsPreorder;
