@@ -66,5 +66,11 @@ namespace ProjectBackend.Domain.Entities
         public ICollection<OrderItemDomain> OrderItems { get; set; } = new List<OrderItemDomain>();
 
         public ICollection<ProductReviewDomain> Reviews { get; set; } = new List<ProductReviewDomain>();
+
+        [NotMapped]
+        public double RatingAverage { get; set; }
+
+        [NotMapped]
+        public int RatingCount { get; set; }
     }
 }

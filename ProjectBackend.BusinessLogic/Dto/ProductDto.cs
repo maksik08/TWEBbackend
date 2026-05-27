@@ -23,6 +23,8 @@ namespace ProjectBackend.BusinessLogic.Dto
         public List<string> KeyFeatures { get; set; } = new();
         public List<string> PackageContents { get; set; } = new();
         public List<ProductSpecificationDto> Specifications { get; set; } = new();
+        public double RatingAverage { get; set; }
+        public int RatingCount { get; set; }
         public int? CategoryId { get; set; }
         public string? Category { get; set; }
         public int? SupplierId { get; set; }

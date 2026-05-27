@@ -70,7 +70,9 @@ namespace ProjectBackend.DataAccess.Repositories
                     : query.OrderBy(product => product.Name).ThenBy(product => product.Id)
             };
 
-            return await query.ToPagedResultAsync(queryOptions, cancellationToken);
+            var page = await query.ToPagedResultAsync(queryOptions, cancellationToken);
+            await EnrichWithRatingsAsync(page.Items, cancellationToken);
+            return page;
         }
 
         public async Task<IReadOnlyCollection<ProductsDomain>> GetByIdsAsync(
@@ -111,11 +113,46 @@ namespace ProjectBackend.DataAccess.Repositories
 
         public async Task<ProductsDomain?> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
-            return await _dbContext.Products
+            var product = await _dbContext.Products
                 .AsNoTracking()
                 .Include(p => p.Category)
                 .Include(p => p.Supplier)
                 .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
+
+            if (product is not null)
+            {
+                await EnrichWithRatingsAsync(new[] { product }, cancellationToken);
+            }
+
+            return product;
+        }
+
+        private async Task EnrichWithRatingsAsync(
+            IReadOnlyCollection<ProductsDomain> products,
+            CancellationToken cancellationToken)
+        {
+            if (products.Count == 0) return;
+
+            var ids = products.Select(p => p.Id).ToList();
+            var stats = await _dbContext.ProductReviews
+                .Where(review => ids.Contains(review.ProductId))
+                .GroupBy(review => review.ProductId)
+                .Select(group => new
+                {
+                    ProductId = group.Key,
+                    Average = group.Average(review => (double)review.Rating),
+                    Count = group.Count(),
+                })
+                .ToDictionaryAsync(entry => entry.ProductId, cancellationToken);
+
+            foreach (var product in products)
+            {
+                if (stats.TryGetValue(product.Id, out var entry))
+                {
+                    product.RatingAverage = entry.Average;
+                    product.RatingCount = entry.Count;
+                }
+            }
         }
 
         public async Task<ProductsDomain> CreateAsync(ProductsDomain product, CancellationToken cancellationToken)
