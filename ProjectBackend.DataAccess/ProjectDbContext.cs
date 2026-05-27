@@ -1,10 +1,39 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using ProjectBackend.Domain.Entities;
 
 namespace ProjectBackend.DataAccess
 {
     public class ProjectDbContext : DbContext
     {
+        private static readonly JsonSerializerOptions JsonOptions = new();
+
+        private static readonly ValueConverter<List<string>, string> StringListConverter = new(
+            v => JsonSerializer.Serialize(v ?? new List<string>(), JsonOptions),
+            v => string.IsNullOrWhiteSpace(v)
+                ? new List<string>()
+                : JsonSerializer.Deserialize<List<string>>(v, JsonOptions) ?? new List<string>());
+
+        private static readonly ValueComparer<List<string>> StringListComparer = new(
+            (a, b) => (a ?? new()).SequenceEqual(b ?? new()),
+            v => v == null ? 0 : v.Aggregate(0, (h, s) => HashCode.Combine(h, s == null ? 0 : s.GetHashCode())),
+            v => v == null ? new List<string>() : v.ToList());
+
+        private static readonly ValueConverter<List<ProductSpecification>, string> SpecListConverter = new(
+            v => JsonSerializer.Serialize(v ?? new List<ProductSpecification>(), JsonOptions),
+            v => string.IsNullOrWhiteSpace(v)
+                ? new List<ProductSpecification>()
+                : JsonSerializer.Deserialize<List<ProductSpecification>>(v, JsonOptions) ?? new List<ProductSpecification>());
+
+        private static readonly ValueComparer<List<ProductSpecification>> SpecListComparer = new(
+            (a, b) => JsonSerializer.Serialize(a ?? new(), JsonOptions) == JsonSerializer.Serialize(b ?? new(), JsonOptions),
+            v => v == null ? 0 : JsonSerializer.Serialize(v, JsonOptions).GetHashCode(),
+            v => v == null
+                ? new List<ProductSpecification>()
+                : v.Select(s => new ProductSpecification { Label = s.Label, Value = s.Value }).ToList());
+
         public ProjectDbContext(DbContextOptions<ProjectDbContext> options) : base(options) { }
 
         public DbSet<ProductsDomain> Products { get; set; }
@@ -46,6 +75,22 @@ namespace ProjectBackend.DataAccess
                 entity.Property(p => p.StockQuantity).HasDefaultValue(0);
                 entity.Property(p => p.IsPreorder).HasDefaultValue(false);
                 entity.Property(p => p.IsVisible).HasDefaultValue(true);
+                entity.Property(p => p.Availability)
+                    .HasConversion<string>()
+                    .HasMaxLength(30)
+                    .HasDefaultValue(ProductAvailability.InStock);
+                entity.Property(p => p.Technology)
+                    .HasConversion(StringListConverter, StringListComparer)
+                    .HasColumnType("nvarchar(max)");
+                entity.Property(p => p.KeyFeatures)
+                    .HasConversion(StringListConverter, StringListComparer)
+                    .HasColumnType("nvarchar(max)");
+                entity.Property(p => p.PackageContents)
+                    .HasConversion(StringListConverter, StringListComparer)
+                    .HasColumnType("nvarchar(max)");
+                entity.Property(p => p.Specifications)
+                    .HasConversion(SpecListConverter, SpecListComparer)
+                    .HasColumnType("nvarchar(max)");
                 entity.Property(p => p.RowVersion).IsRowVersion();
                 entity.Property(p => p.CreatedAt).HasColumnType("datetime2");
                 entity.Property(p => p.UpdatedAt).HasColumnType("datetime2");
