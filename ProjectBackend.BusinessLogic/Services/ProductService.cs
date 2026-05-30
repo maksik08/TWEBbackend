@@ -51,7 +51,7 @@ namespace ProjectBackend.BusinessLogic.Services
                 SupplierId = request.SupplierId,
                 MinPrice = request.MinPrice,
                 MaxPrice = request.MaxPrice,
-                IncludeHidden = false
+                IncludeHidden = _currentUserContext.Role is UserRole.Admin or UserRole.Manager
             };
 
             var products = await _repository.GetAllAsync(queryOptions, cancellationToken);
