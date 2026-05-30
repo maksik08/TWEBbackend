@@ -165,14 +165,22 @@ namespace ProjectBackend.DataAccess.Repositories
         public async Task<ProductsDomain?> UpdateAsync(int id, ProductsDomain product, CancellationToken cancellationToken)
         {
             var existing = await _dbContext.Products
-                .Include(p => p.Category)
-                .Include(p => p.Supplier)
                 .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
             if (existing is null) return null;
 
             existing.Name = product.Name;
             existing.Title = product.Title;
             existing.Image = product.Image;
+            existing.Brand = product.Brand;
+            existing.Sku = product.Sku;
+            existing.ShortDescription = product.ShortDescription;
+            existing.Description = product.Description;
+            existing.Warranty = product.Warranty;
+            existing.Availability = product.Availability;
+            existing.Technology = product.Technology;
+            existing.KeyFeatures = product.KeyFeatures;
+            existing.PackageContents = product.PackageContents;
+            existing.Specifications = product.Specifications;
             existing.Price = product.Price;
             existing.StockQuantity = product.StockQuantity;
             existing.IsPreorder = product.IsPreorder;
@@ -182,8 +190,8 @@ namespace ProjectBackend.DataAccess.Repositories
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
-            await ReloadReferenceAsync(existing, p => p.Category, existing.CategoryId.HasValue);
-            await ReloadReferenceAsync(existing, p => p.Supplier, existing.SupplierId.HasValue);
+            await _dbContext.Entry(existing).Reference(p => p.Category).LoadAsync(cancellationToken);
+            await _dbContext.Entry(existing).Reference(p => p.Supplier).LoadAsync(cancellationToken);
 
             return existing;
         }
@@ -203,23 +211,6 @@ namespace ProjectBackend.DataAccess.Repositories
             existing.IsVisible = isVisible;
             await _dbContext.SaveChangesAsync(cancellationToken);
             return existing;
-        }
-
-        private async Task ReloadReferenceAsync<TProperty>(
-            ProductsDomain entity,
-            System.Linq.Expressions.Expression<Func<ProductsDomain, TProperty?>> navigation,
-            bool hasForeignKey)
-            where TProperty : class
-        {
-            var reference = _dbContext.Entry(entity).Reference(navigation);
-            if (!hasForeignKey)
-            {
-                reference.CurrentValue = null;
-                return;
-            }
-
-            reference.IsLoaded = false;
-            await reference.LoadAsync();
         }
 
         public async Task<ProductsDomain?> DeleteAsync(int id, CancellationToken cancellationToken)
