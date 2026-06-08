@@ -54,6 +54,7 @@ namespace ProjectBackend.DataAccess
         public DbSet<PaymentTransactionDomain> PaymentTransactions { get; set; }
         public DbSet<IdempotencyRecordDomain> IdempotencyRecords { get; set; }
         public DbSet<ProductReviewDomain> ProductReviews { get; set; }
+        public DbSet<ReturnDomain> Returns { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -239,6 +240,29 @@ namespace ProjectBackend.DataAccess
 
                 entity.HasIndex(m => m.CreatedAt);
                 entity.HasIndex(m => m.IsRead);
+            });
+
+            modelBuilder.Entity<ReturnDomain>(entity =>
+            {
+                entity.Property(r => r.Status).HasConversion<string>().HasMaxLength(50);
+                entity.Property(r => r.Amount).HasColumnType("decimal(18,2)");
+                entity.Property(r => r.CreatedAt).HasColumnType("datetime2");
+                entity.Property(r => r.UpdatedAt).HasColumnType("datetime2");
+                entity.Property(r => r.ResolvedAt).HasColumnType("datetime2");
+
+                entity.HasOne(r => r.Order)
+                    .WithMany()
+                    .HasForeignKey(r => r.OrderId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(r => r.User)
+                    .WithMany()
+                    .HasForeignKey(r => r.UserId)
+                    .OnDelete(DeleteBehavior.NoAction);
+
+                entity.HasIndex(r => r.OrderId);
+                entity.HasIndex(r => r.Status);
+                entity.HasIndex(r => r.CreatedAt);
             });
 
             modelBuilder.Entity<ServiceRequestDomain>(entity =>

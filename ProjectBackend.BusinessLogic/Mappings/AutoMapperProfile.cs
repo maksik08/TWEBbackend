@@ -64,6 +64,9 @@ namespace ProjectBackend.BusinessLogic.Mappings
             CreateMap<ContactMessageDomain, ContactMessageDto>()
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? src.User.Username : null));
 
+            CreateMap<ReturnDomain, ReturnDto>()
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? src.User.Username : null));
+
             CreateMap<ServiceRequestCommentDomain, ServiceRequestCommentDto>()
                 .ForMember(dest => dest.AuthorUsername,
                     opt => opt.MapFrom(src => src.AuthorUser != null ? src.AuthorUser.Username : string.Empty));
