@@ -130,12 +130,17 @@ namespace ProjectBackend.BusinessLogic.Services
 
             order.Subtotal = order.Items.Sum(item => item.UnitPrice * item.Quantity);
 
+            if (dto.Services is not null)
+            {
+                order.ServicesTotal = OrderServicesCalculator.Calculate(dto.Services, order.Items);
+            }
+
             var created = await _orderRepository.CreateAsync(order, cancellationToken);
             await _actionLogService.RecordAsync(
                 "Create",
                 nameof(OrderDomain),
                 created.Id,
-                $"Created order {created.Id} with subtotal {created.Subtotal:0.00}.",
+                $"Created order {created.Id} with total {(created.Subtotal + created.ServicesTotal):0.00} (goods {created.Subtotal:0.00}, services {created.ServicesTotal:0.00}).",
                 cancellationToken);
 
             return _mapper.Map<OrderDto>(created);
@@ -151,8 +156,10 @@ namespace ProjectBackend.BusinessLogic.Services
                 throw new ValidationException($"Only pending orders can be paid. Current status: {order.Status}.");
             }
 
+            var chargeAmount = order.Subtotal + order.ServicesTotal;
+
             var payer = EnsureFound(await _userRepository.GetByIdAsync(order.UserId, cancellationToken), "User", order.UserId);
-            if (payer.Balance < order.Subtotal)
+            if (payer.Balance < chargeAmount)
             {
                 throw new ValidationException("Insufficient balance to pay for this order.");
             }
@@ -184,14 +191,14 @@ namespace ProjectBackend.BusinessLogic.Services
 
             await using var transaction = await _orderRepository.BeginTransactionAsync(cancellationToken);
 
-            await _userRepository.AdjustBalanceAsync(order.UserId, -order.Subtotal, cancellationToken);
+            await _userRepository.AdjustBalanceAsync(order.UserId, -chargeAmount, cancellationToken);
             order.Status = OrderStatus.Paid;
             order.PaidAt = DateTime.UtcNow;
             var updated = await _orderRepository.UpdateAsync(order, cancellationToken);
 
             await _paymentTransactionService.RecordAsync(
                 order.UserId,
-                order.Subtotal,
+                chargeAmount,
                 PaymentTransactionType.OrderPayment,
                 PaymentMethod.InternalBalance,
                 PaymentTransactionStatus.Completed,
@@ -206,7 +213,7 @@ namespace ProjectBackend.BusinessLogic.Services
                 "Pay",
                 nameof(OrderDomain),
                 updated.Id,
-                $"Paid order {updated.Id} for {updated.Subtotal:0.00}.",
+                $"Paid order {updated.Id} for {chargeAmount:0.00}.",
                 cancellationToken);
 
             return _mapper.Map<OrderDto>(updated);
@@ -238,7 +245,7 @@ namespace ProjectBackend.BusinessLogic.Services
                     }
                 }
 
-                await _userRepository.AdjustBalanceAsync(order.UserId, order.Subtotal, cancellationToken);
+                await _userRepository.AdjustBalanceAsync(order.UserId, order.Subtotal + order.ServicesTotal, cancellationToken);
             }
 
             order.Status = OrderStatus.Cancelled;
@@ -248,7 +255,7 @@ namespace ProjectBackend.BusinessLogic.Services
             {
                 await _paymentTransactionService.RecordAsync(
                     order.UserId,
-                    order.Subtotal,
+                    order.Subtotal + order.ServicesTotal,
                     PaymentTransactionType.Refund,
                     PaymentMethod.InternalBalance,
                     PaymentTransactionStatus.Completed,

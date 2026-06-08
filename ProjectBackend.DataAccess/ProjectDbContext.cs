@@ -159,6 +159,7 @@ namespace ProjectBackend.DataAccess
             {
                 entity.Property(o => o.Status).HasConversion<string>().HasMaxLength(50);
                 entity.Property(o => o.Subtotal).HasColumnType("decimal(18,2)");
+                entity.Property(o => o.ServicesTotal).HasColumnType("decimal(18,2)");
                 entity.Property(o => o.CreatedAt).HasColumnType("datetime2");
                 entity.Property(o => o.UpdatedAt).HasColumnType("datetime2");
                 entity.Property(o => o.PaidAt).HasColumnType("datetime2");

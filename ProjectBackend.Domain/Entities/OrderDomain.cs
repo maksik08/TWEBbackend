@@ -18,6 +18,11 @@ namespace ProjectBackend.Domain.Entities
 
         public decimal Subtotal { get; set; }
 
+        /// <summary>
+        /// Server-computed cost of optional installation services, or 0 when none were requested.
+        /// </summary>
+        public decimal ServicesTotal { get; set; }
+
         public DateTime? PaidAt { get; set; }
 
         [MaxLength(120)]

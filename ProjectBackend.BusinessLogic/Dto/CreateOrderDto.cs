@@ -27,5 +27,11 @@ namespace ProjectBackend.BusinessLogic.Dto
 
         [StringLength(500)]
         public string? Comment { get; set; }
+
+        /// <summary>
+        /// Optional installation services. When present, their cost is computed server-side
+        /// and added to the order total.
+        /// </summary>
+        public CreateOrderServicesDto? Services { get; set; }
     }
 }

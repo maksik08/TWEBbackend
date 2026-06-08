@@ -55,7 +55,8 @@ namespace ProjectBackend.BusinessLogic.Mappings
             CreateMap<OrderItemDomain, OrderItemDto>()
                 .ForMember(dest => dest.LineTotal, opt => opt.MapFrom(src => src.Quantity * src.UnitPrice));
             CreateMap<OrderDomain, OrderDto>()
-                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? src.User.Username : null));
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? src.User.Username : null))
+                .ForMember(dest => dest.Total, opt => opt.MapFrom(src => src.Subtotal + src.ServicesTotal));
 
             CreateMap<ServiceRequestCommentDomain, ServiceRequestCommentDto>()
                 .ForMember(dest => dest.AuthorUsername,
