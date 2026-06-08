@@ -58,6 +58,9 @@ namespace ProjectBackend.BusinessLogic.Mappings
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User != null ? src.User.Username : null))
                 .ForMember(dest => dest.Total, opt => opt.MapFrom(src => src.Subtotal + src.ServicesTotal));
 
+            CreateMap<ActionLogDomain, ActionLogDto>()
+                .ForMember(dest => dest.ActorUserName, opt => opt.MapFrom(src => src.ActorUser != null ? src.ActorUser.Username : null));
+
             CreateMap<ServiceRequestCommentDomain, ServiceRequestCommentDto>()
                 .ForMember(dest => dest.AuthorUsername,
                     opt => opt.MapFrom(src => src.AuthorUser != null ? src.AuthorUser.Username : string.Empty));

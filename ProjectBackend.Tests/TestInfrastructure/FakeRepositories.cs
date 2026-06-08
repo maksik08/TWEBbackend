@@ -567,6 +567,24 @@ namespace ProjectBackend.Tests.TestInfrastructure
             Entries.Add((action, entityType, entityId, details));
             return Task.CompletedTask;
         }
+
+        public Task<PagedResult<ActionLogDto>> GetAllAsync(ActionLogListRequestDto request, CancellationToken cancellationToken) =>
+            Task.FromResult(new PagedResult<ActionLogDto>
+            {
+                Items = Entries
+                    .Select((entry, index) => new ActionLogDto
+                    {
+                        Id = index + 1,
+                        Action = entry.Action,
+                        EntityType = entry.EntityType,
+                        EntityId = entry.EntityId,
+                        Details = entry.Details
+                    })
+                    .ToList(),
+                TotalCount = Entries.Count,
+                Page = request.Page,
+                PageSize = request.PageSize
+            });
     }
 
     internal sealed class FakeNotificationService : INotificationService
