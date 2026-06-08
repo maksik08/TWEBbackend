@@ -11,6 +11,7 @@ namespace ProjectBackend.DataAccess.Repositories
         Task<UserDomain> CreateAsync(UserDomain user, CancellationToken cancellationToken);
         Task<UserDomain?> UpdateAsync(int id, UserDomain user, bool updatePassword, CancellationToken cancellationToken);
         Task<UserDomain?> DeleteAsync(int id, CancellationToken cancellationToken);
+        Task<UserDomain?> SetBlockedAsync(int id, bool isBlocked, CancellationToken cancellationToken);
         Task<UserDomain?> GetByUsernameAsync(string username, CancellationToken cancellationToken);
         Task<UserDomain?> GetByEmailAsync(string email, CancellationToken cancellationToken);
         Task UpdatePasswordAsync(int userId, string passwordHash, CancellationToken cancellationToken);

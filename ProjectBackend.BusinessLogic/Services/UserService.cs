@@ -114,6 +114,33 @@ namespace ProjectBackend.BusinessLogic.Services
             return _mapper.Map<UserDto>(deleted);
         }
 
+        public async Task<UserDto> SetBlockedAsync(int id, bool isBlocked, CancellationToken cancellationToken)
+        {
+            var user = EnsureFound(await _repository.GetByIdAsync(id, cancellationToken), "User", id);
+
+            if (_currentUserContext.UserId == id)
+            {
+                throw new ValidationException("You cannot block your own account.");
+            }
+
+            if (isBlocked && user.Role == UserRole.Admin)
+            {
+                throw new ValidationException("Administrators cannot be blocked.");
+            }
+
+            if (user.IsBlocked == isBlocked)
+            {
+                return _mapper.Map<UserDto>(user);
+            }
+
+            var updated = EnsureFound(
+                await _repository.SetBlockedAsync(id, isBlocked, cancellationToken),
+                "User",
+                id);
+
+            return _mapper.Map<UserDto>(updated);
+        }
+
         public async Task<UserDto> UpdateProfileAsync(int id, UpdateProfileDto dto, CancellationToken cancellationToken)
         {
             EnsureFound(await _repository.GetByIdAsync(id, cancellationToken), "User", id);

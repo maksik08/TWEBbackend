@@ -69,6 +69,11 @@ namespace ProjectBackend.BusinessLogic.Services
                 throw new UnauthorizedAppException("Invalid username or password.");
             }
 
+            if (user.IsBlocked)
+            {
+                throw new UnauthorizedAppException("This account has been blocked. Please contact support.");
+            }
+
             return await BuildAuthResultAsync(user, cancellationToken);
         }
 
@@ -90,6 +95,11 @@ namespace ProjectBackend.BusinessLogic.Services
             if (user is null)
             {
                 throw new UnauthorizedAppException("User no longer exists.");
+            }
+
+            if (user.IsBlocked)
+            {
+                throw new UnauthorizedAppException("This account has been blocked. Please contact support.");
             }
 
             stored.RevokedAt = DateTime.UtcNow;

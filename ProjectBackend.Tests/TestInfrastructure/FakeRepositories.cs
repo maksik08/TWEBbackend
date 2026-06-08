@@ -333,6 +333,17 @@ namespace ProjectBackend.Tests.TestInfrastructure
             return Task.FromResult(existing);
         }
 
+        public Task<UserDomain?> SetBlockedAsync(int id, bool isBlocked, CancellationToken cancellationToken)
+        {
+            var existing = Users.FirstOrDefault(user => user.Id == id);
+            if (existing is not null)
+            {
+                existing.IsBlocked = isBlocked;
+            }
+
+            return Task.FromResult(existing);
+        }
+
         public Task<UserDomain?> GetByUsernameAsync(string username, CancellationToken cancellationToken) =>
             Task.FromResult(Users.FirstOrDefault(user => user.Username == username));
 

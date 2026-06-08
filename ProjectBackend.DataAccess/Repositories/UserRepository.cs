@@ -98,6 +98,19 @@ namespace ProjectBackend.DataAccess.Repositories
             return existing;
         }
 
+        public async Task<UserDomain?> SetBlockedAsync(int id, bool isBlocked, CancellationToken cancellationToken)
+        {
+            var existing = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
+            if (existing is null)
+            {
+                return null;
+            }
+
+            existing.IsBlocked = isBlocked;
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            return existing;
+        }
+
         public async Task<UserDomain?> GetByUsernameAsync(string username, CancellationToken cancellationToken)
         {
             return await _dbContext.Users

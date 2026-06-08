@@ -80,5 +80,17 @@ namespace ProjectBackend.api.Controllers
             var deleted = await _userService.DeleteAsync(id, cancellationToken);
             return Ok(ApiResponse<UserDto>.Ok(deleted, "User deleted successfully."));
         }
+
+        /// <summary>
+        /// Blocks or unblocks a user account. Blocked users cannot sign in or refresh their session.
+        /// </summary>
+        [AdminMod]
+        [HttpPatch("{id:int}/block")]
+        public async Task<IActionResult> SetBlocked([FromRoute] int id, [FromBody] BlockUserDto dto, CancellationToken cancellationToken)
+        {
+            var user = await _userService.SetBlockedAsync(id, dto.IsBlocked, cancellationToken);
+            var message = dto.IsBlocked ? "User account blocked." : "User account unblocked.";
+            return Ok(ApiResponse<UserDto>.Ok(user, message));
+        }
     }
 }

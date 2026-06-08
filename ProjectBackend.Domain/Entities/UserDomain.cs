@@ -17,6 +17,8 @@ namespace ProjectBackend.Domain.Entities
 
         public UserRole Role { get; set; } = UserRole.Customer;
 
+        public bool IsBlocked { get; set; }
+
         [MaxLength(100)]
         public string? FirstName { get; set; }
 
