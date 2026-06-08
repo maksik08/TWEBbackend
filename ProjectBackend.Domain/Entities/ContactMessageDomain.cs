@@ -24,6 +24,8 @@ namespace ProjectBackend.Domain.Entities
 
         public bool IsRead { get; set; }
 
+        public ContactMessageStatus Status { get; set; } = ContactMessageStatus.New;
+
         public DateTime CreatedAt { get; set; }
     }
 }

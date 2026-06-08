@@ -229,6 +229,7 @@ namespace ProjectBackend.DataAccess
                 entity.Property(m => m.Email).HasMaxLength(200).IsRequired();
                 entity.Property(m => m.Subject).HasMaxLength(200).IsRequired();
                 entity.Property(m => m.Message).HasMaxLength(4000).IsRequired();
+                entity.Property(m => m.Status).HasConversion<string>().HasMaxLength(50);
                 entity.Property(m => m.CreatedAt).HasColumnType("datetime2");
 
                 entity.HasOne(m => m.User)
