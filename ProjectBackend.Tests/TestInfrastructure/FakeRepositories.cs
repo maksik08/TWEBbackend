@@ -57,6 +57,19 @@ namespace ProjectBackend.Tests.TestInfrastructure
             return Task.FromResult(items);
         }
 
+        public Task UpdateStockLevelsAsync(IReadOnlyDictionary<int, int> stockByProductId, CancellationToken cancellationToken)
+        {
+            foreach (var product in Products)
+            {
+                if (stockByProductId.TryGetValue(product.Id, out var quantity))
+                {
+                    product.StockQuantity = quantity;
+                }
+            }
+
+            return Task.CompletedTask;
+        }
+
         public Task<ProductsDomain?> SetVisibilityAsync(int id, bool isVisible, CancellationToken cancellationToken)
         {
             var existing = Products.FirstOrDefault(product => product.Id == id);

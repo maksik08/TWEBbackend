@@ -134,6 +134,8 @@ builder.Services.AddScoped<IWorkPhotoStorageService, LocalWorkPhotoStorageServic
 builder.Services.AddScoped<IContactService, ContactService>();
 builder.Services.AddScoped<IReturnService, ReturnService>();
 builder.Services.AddScoped<ICouponService, CouponService>();
+builder.Services.AddScoped<IWarehouseStockProvider, MockWarehouseStockProvider>();
+builder.Services.AddScoped<IWarehouseSyncService, WarehouseSyncService>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserContext, CurrentUserContext>();
 

@@ -111,6 +111,29 @@ namespace ProjectBackend.DataAccess.Repositories
                 .ToListAsync(cancellationToken);
         }
 
+        public async Task UpdateStockLevelsAsync(IReadOnlyDictionary<int, int> stockByProductId, CancellationToken cancellationToken)
+        {
+            if (stockByProductId.Count == 0)
+            {
+                return;
+            }
+
+            var ids = stockByProductId.Keys.ToArray();
+            var products = await _dbContext.Products
+                .Where(product => ids.Contains(product.Id))
+                .ToListAsync(cancellationToken);
+
+            foreach (var product in products)
+            {
+                if (stockByProductId.TryGetValue(product.Id, out var quantity))
+                {
+                    product.StockQuantity = quantity;
+                }
+            }
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+        }
+
         public async Task<ProductsDomain?> GetByIdAsync(int id, CancellationToken cancellationToken)
         {
             var product = await _dbContext.Products

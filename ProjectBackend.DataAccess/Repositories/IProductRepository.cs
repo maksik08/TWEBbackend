@@ -11,6 +11,7 @@ namespace ProjectBackend.DataAccess.Repositories
         Task<IReadOnlyCollection<ProductsDomain>> GetByIdsAsync(IReadOnlyCollection<int> ids, bool includeHidden, CancellationToken cancellationToken);
         Task<IReadOnlyCollection<ProductsDomain>> GetTrackedByIdsAsync(IReadOnlyCollection<int> ids, CancellationToken cancellationToken);
         Task<IReadOnlyCollection<ProductsDomain>> GetAllForStockReportAsync(CancellationToken cancellationToken);
+        Task UpdateStockLevelsAsync(IReadOnlyDictionary<int, int> stockByProductId, CancellationToken cancellationToken);
         Task<ProductsDomain> CreateAsync(ProductsDomain product, CancellationToken cancellationToken);
         Task<ProductsDomain?> UpdateAsync(int id, ProductsDomain product, CancellationToken cancellationToken);
         Task<ProductsDomain?> SetVisibilityAsync(int id, bool isVisible, CancellationToken cancellationToken);
