@@ -57,6 +57,8 @@ namespace ProjectBackend.DataAccess
         public DbSet<ReturnDomain> Returns { get; set; }
         public DbSet<CouponDomain> Coupons { get; set; }
         public DbSet<ServiceTariffDomain> ServiceTariffs { get; set; }
+        public DbSet<SupportTicketDomain> SupportTickets { get; set; }
+        public DbSet<SupportMessageDomain> SupportMessages { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -279,6 +281,46 @@ namespace ProjectBackend.DataAccess
                 entity.Property(c => c.ExpiresAt).HasColumnType("datetime2");
 
                 entity.HasIndex(c => c.Code).IsUnique();
+            });
+
+            modelBuilder.Entity<SupportTicketDomain>(entity =>
+            {
+                entity.Property(ticket => ticket.Subject).HasMaxLength(200).IsRequired();
+                entity.Property(ticket => ticket.Status).HasConversion<string>().HasMaxLength(50);
+                entity.Property(ticket => ticket.CreatedAt).HasColumnType("datetime2");
+                entity.Property(ticket => ticket.UpdatedAt).HasColumnType("datetime2");
+
+                entity.HasOne(ticket => ticket.Customer)
+                    .WithMany()
+                    .HasForeignKey(ticket => ticket.CustomerId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(ticket => ticket.AssignedAgent)
+                    .WithMany()
+                    .HasForeignKey(ticket => ticket.AssignedAgentId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
+                entity.HasIndex(ticket => ticket.Status);
+                entity.HasIndex(ticket => ticket.CreatedAt);
+            });
+
+            modelBuilder.Entity<SupportMessageDomain>(entity =>
+            {
+                entity.Property(message => message.Text).HasMaxLength(4000).IsRequired();
+                entity.Property(message => message.CreatedAt).HasColumnType("datetime2");
+                entity.Property(message => message.UpdatedAt).HasColumnType("datetime2");
+
+                entity.HasOne(message => message.Ticket)
+                    .WithMany(ticket => ticket.Messages)
+                    .HasForeignKey(message => message.TicketId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(message => message.AuthorUser)
+                    .WithMany()
+                    .HasForeignKey(message => message.AuthorUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(message => message.TicketId);
             });
 
             modelBuilder.Entity<ServiceTariffDomain>(entity =>

@@ -90,6 +90,15 @@ namespace ProjectBackend.BusinessLogic.Mappings
                     opt => opt.MapFrom(src => src.User != null ? src.User.Username : string.Empty));
 
             CreateMap<ServiceTariffDomain, ServiceTariffDto>();
+
+            CreateMap<SupportMessageDomain, SupportMessageDto>()
+                .ForMember(dest => dest.AuthorUsername,
+                    opt => opt.MapFrom(src => src.AuthorUser != null ? src.AuthorUser.Username : null));
+            CreateMap<SupportTicketDomain, SupportTicketDto>()
+                .ForMember(dest => dest.CustomerUsername,
+                    opt => opt.MapFrom(src => src.Customer != null ? src.Customer.Username : null))
+                .ForMember(dest => dest.AssignedAgentUsername,
+                    opt => opt.MapFrom(src => src.AssignedAgent != null ? src.AssignedAgent.Username : null));
         }
     }
 }

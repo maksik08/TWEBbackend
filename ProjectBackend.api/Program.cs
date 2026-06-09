@@ -118,6 +118,7 @@ builder.Services.AddScoped<IContactMessageRepository, ContactMessageRepository>(
 builder.Services.AddScoped<IReturnRepository, ReturnRepository>();
 builder.Services.AddScoped<ICouponRepository, CouponRepository>();
 builder.Services.AddScoped<IServiceTariffRepository, ServiceTariffRepository>();
+builder.Services.AddScoped<ISupportTicketRepository, SupportTicketRepository>();
 builder.Services.AddScoped<IIdempotencyStore, IdempotencyStore>();
 
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -136,6 +137,7 @@ builder.Services.AddScoped<IContactService, ContactService>();
 builder.Services.AddScoped<IReturnService, ReturnService>();
 builder.Services.AddScoped<ICouponService, CouponService>();
 builder.Services.AddScoped<IServiceTariffService, ServiceTariffService>();
+builder.Services.AddScoped<ISupportTicketService, SupportTicketService>();
 builder.Services.AddScoped<IWarehouseStockProvider, MockWarehouseStockProvider>();
 builder.Services.AddScoped<IWarehouseSyncService, WarehouseSyncService>();
 builder.Services.AddHttpContextAccessor();
