@@ -20,9 +20,21 @@ namespace ProjectBackend.BusinessLogic.Dto
 
         public string? ManagerUsername { get; set; }
 
+        public int? ServiceTariffId { get; set; }
+
         public string ServiceTitle { get; set; } = string.Empty;
 
         public string? Description { get; set; }
+
+        public decimal Price { get; set; }
+
+        public DateTime? PaidAt { get; set; }
+
+        public int? Rating { get; set; }
+
+        public string? RatingComment { get; set; }
+
+        public DateTime? RatedAt { get; set; }
 
         public string Address { get; set; } = string.Empty;
 

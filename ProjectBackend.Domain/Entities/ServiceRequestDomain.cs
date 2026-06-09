@@ -27,11 +27,27 @@ namespace ProjectBackend.Domain.Entities
         [ForeignKey(nameof(ManagerId))]
         public UserDomain? Manager { get; set; }
 
+        public int? ServiceTariffId { get; set; }
+
+        [ForeignKey(nameof(ServiceTariffId))]
+        public ServiceTariffDomain? ServiceTariff { get; set; }
+
         [MaxLength(200)]
         public required string ServiceTitle { get; set; }
 
         [MaxLength(1000)]
         public string? Description { get; set; }
+
+        public decimal Price { get; set; }
+
+        public DateTime? PaidAt { get; set; }
+
+        public int? Rating { get; set; }
+
+        [MaxLength(1000)]
+        public string? RatingComment { get; set; }
+
+        public DateTime? RatedAt { get; set; }
 
         [MaxLength(400)]
         public required string Address { get; set; }

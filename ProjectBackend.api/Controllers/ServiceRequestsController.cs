@@ -42,5 +42,25 @@ namespace ProjectBackend.api.Controllers
             var created = await _serviceRequestService.CreateAsync(dto, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, ApiResponse<ServiceRequestDto>.Ok(created, "Service request created successfully."));
         }
+
+        /// <summary>
+        /// Pays for the service request from the customer's internal balance.
+        /// </summary>
+        [HttpPost("{id:int}/pay")]
+        public async Task<IActionResult> Pay([FromRoute] int id, CancellationToken cancellationToken)
+        {
+            var request = await _serviceRequestService.PayAsync(id, cancellationToken);
+            return Ok(ApiResponse<ServiceRequestDto>.Ok(request, "Service paid successfully."));
+        }
+
+        /// <summary>
+        /// Rates the quality of a completed service request (1..5).
+        /// </summary>
+        [HttpPost("{id:int}/rate")]
+        public async Task<IActionResult> Rate([FromRoute] int id, [FromBody] RateServiceRequestDto dto, CancellationToken cancellationToken)
+        {
+            var request = await _serviceRequestService.RateAsync(id, dto, cancellationToken);
+            return Ok(ApiResponse<ServiceRequestDto>.Ok(request, "Thank you for your feedback."));
+        }
     }
 }

@@ -4,9 +4,8 @@ namespace ProjectBackend.BusinessLogic.Dto
 {
     public class CreateServiceRequestDto
     {
-        [Required]
-        [MaxLength(200)]
-        public string ServiceTitle { get; set; } = string.Empty;
+        [Range(1, int.MaxValue)]
+        public int ServiceTariffId { get; set; }
 
         [MaxLength(1000)]
         public string? Description { get; set; }

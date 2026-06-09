@@ -88,6 +88,8 @@ namespace ProjectBackend.BusinessLogic.Mappings
             CreateMap<ProductReviewDomain, ProductReviewDto>()
                 .ForMember(dest => dest.AuthorUsername,
                     opt => opt.MapFrom(src => src.User != null ? src.User.Username : string.Empty));
+
+            CreateMap<ServiceTariffDomain, ServiceTariffDto>();
         }
     }
 }

@@ -56,6 +56,7 @@ namespace ProjectBackend.DataAccess
         public DbSet<ProductReviewDomain> ProductReviews { get; set; }
         public DbSet<ReturnDomain> Returns { get; set; }
         public DbSet<CouponDomain> Coupons { get; set; }
+        public DbSet<ServiceTariffDomain> ServiceTariffs { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -280,6 +281,15 @@ namespace ProjectBackend.DataAccess
                 entity.HasIndex(c => c.Code).IsUnique();
             });
 
+            modelBuilder.Entity<ServiceTariffDomain>(entity =>
+            {
+                entity.Property(tariff => tariff.Name).HasMaxLength(200).IsRequired();
+                entity.Property(tariff => tariff.Description).HasMaxLength(1000);
+                entity.Property(tariff => tariff.Price).HasColumnType("decimal(18,2)");
+                entity.Property(tariff => tariff.CreatedAt).HasColumnType("datetime2");
+                entity.Property(tariff => tariff.UpdatedAt).HasColumnType("datetime2");
+            });
+
             modelBuilder.Entity<ServiceRequestDomain>(entity =>
             {
                 entity.Property(request => request.RequestNumber).HasMaxLength(32);
@@ -288,10 +298,18 @@ namespace ProjectBackend.DataAccess
                 entity.Property(request => request.Address).HasMaxLength(400);
                 entity.Property(request => request.ContactPhone).HasMaxLength(50);
                 entity.Property(request => request.CompletionReport).HasMaxLength(2000);
+                entity.Property(request => request.RatingComment).HasMaxLength(1000);
+                entity.Property(request => request.Price).HasColumnType("decimal(18,2)");
                 entity.Property(request => request.Status).HasConversion<string>();
                 entity.Property(request => request.CreatedAt).HasColumnType("datetime2");
                 entity.Property(request => request.UpdatedAt).HasColumnType("datetime2");
+                entity.Property(request => request.PaidAt).HasColumnType("datetime2");
                 entity.HasIndex(request => request.RequestNumber).IsUnique();
+
+                entity.HasOne(request => request.ServiceTariff)
+                    .WithMany()
+                    .HasForeignKey(request => request.ServiceTariffId)
+                    .OnDelete(DeleteBehavior.SetNull);
 
                 entity.HasOne(request => request.Customer)
                     .WithMany(user => user.ServiceRequests)
