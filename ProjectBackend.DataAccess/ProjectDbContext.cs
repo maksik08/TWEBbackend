@@ -55,6 +55,7 @@ namespace ProjectBackend.DataAccess
         public DbSet<IdempotencyRecordDomain> IdempotencyRecords { get; set; }
         public DbSet<ProductReviewDomain> ProductReviews { get; set; }
         public DbSet<ReturnDomain> Returns { get; set; }
+        public DbSet<CouponDomain> Coupons { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -161,6 +162,7 @@ namespace ProjectBackend.DataAccess
                 entity.Property(o => o.Status).HasConversion<string>().HasMaxLength(50);
                 entity.Property(o => o.Subtotal).HasColumnType("decimal(18,2)");
                 entity.Property(o => o.ServicesTotal).HasColumnType("decimal(18,2)");
+                entity.Property(o => o.Discount).HasColumnType("decimal(18,2)");
                 entity.Property(o => o.CreatedAt).HasColumnType("datetime2");
                 entity.Property(o => o.UpdatedAt).HasColumnType("datetime2");
                 entity.Property(o => o.PaidAt).HasColumnType("datetime2");
@@ -263,6 +265,19 @@ namespace ProjectBackend.DataAccess
                 entity.HasIndex(r => r.OrderId);
                 entity.HasIndex(r => r.Status);
                 entity.HasIndex(r => r.CreatedAt);
+            });
+
+            modelBuilder.Entity<CouponDomain>(entity =>
+            {
+                entity.Property(c => c.Code).HasMaxLength(40).IsRequired();
+                entity.Property(c => c.DiscountType).HasConversion<string>().HasMaxLength(50);
+                entity.Property(c => c.DiscountValue).HasColumnType("decimal(18,2)");
+                entity.Property(c => c.MinOrderAmount).HasColumnType("decimal(18,2)");
+                entity.Property(c => c.CreatedAt).HasColumnType("datetime2");
+                entity.Property(c => c.UpdatedAt).HasColumnType("datetime2");
+                entity.Property(c => c.ExpiresAt).HasColumnType("datetime2");
+
+                entity.HasIndex(c => c.Code).IsUnique();
             });
 
             modelBuilder.Entity<ServiceRequestDomain>(entity =>

@@ -23,6 +23,20 @@ namespace ProjectBackend.Domain.Entities
         /// </summary>
         public decimal ServicesTotal { get; set; }
 
+        /// <summary>
+        /// Discount applied from a promo code, or 0 when none was used.
+        /// </summary>
+        public decimal Discount { get; set; }
+
+        [MaxLength(40)]
+        public string? CouponCode { get; set; }
+
+        /// <summary>
+        /// Amount actually charged: goods minus discount, plus services.
+        /// </summary>
+        [NotMapped]
+        public decimal Total => Subtotal - Discount + ServicesTotal;
+
         public DateTime? PaidAt { get; set; }
 
         [MaxLength(120)]

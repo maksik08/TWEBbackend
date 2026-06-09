@@ -33,5 +33,11 @@ namespace ProjectBackend.BusinessLogic.Dto
         /// and added to the order total.
         /// </summary>
         public CreateOrderServicesDto? Services { get; set; }
+
+        /// <summary>
+        /// Optional promo code. Validated and applied server-side against the goods subtotal.
+        /// </summary>
+        [StringLength(40)]
+        public string? CouponCode { get; set; }
     }
 }

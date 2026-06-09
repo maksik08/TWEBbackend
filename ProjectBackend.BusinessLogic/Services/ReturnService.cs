@@ -96,7 +96,7 @@ namespace ProjectBackend.BusinessLogic.Services
                 UserId = order.UserId,
                 Reason = NormalizeRequiredText(dto.Reason, "Reason"),
                 Status = ReturnStatus.Requested,
-                Amount = order.Subtotal + order.ServicesTotal
+                Amount = order.Total
             };
 
             var created = await _returnRepository.CreateAsync(entity, cancellationToken);

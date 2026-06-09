@@ -13,6 +13,7 @@ namespace ProjectBackend.BusinessLogic.Services
         private readonly IOrderRepository _orderRepository;
         private readonly IUserRepository _userRepository;
         private readonly IProductRepository _productRepository;
+        private readonly ICouponRepository _couponRepository;
         private readonly IPaymentTransactionService _paymentTransactionService;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly IActionLogService _actionLogService;
@@ -22,6 +23,7 @@ namespace ProjectBackend.BusinessLogic.Services
             IOrderRepository orderRepository,
             IUserRepository userRepository,
             IProductRepository productRepository,
+            ICouponRepository couponRepository,
             IPaymentTransactionService paymentTransactionService,
             ICurrentUserContext currentUserContext,
             IActionLogService actionLogService,
@@ -30,6 +32,7 @@ namespace ProjectBackend.BusinessLogic.Services
             _orderRepository = orderRepository;
             _userRepository = userRepository;
             _productRepository = productRepository;
+            _couponRepository = couponRepository;
             _paymentTransactionService = paymentTransactionService;
             _currentUserContext = currentUserContext;
             _actionLogService = actionLogService;
@@ -135,12 +138,30 @@ namespace ProjectBackend.BusinessLogic.Services
                 order.ServicesTotal = OrderServicesCalculator.Calculate(dto.Services, order.Items);
             }
 
+            CouponDomain? appliedCoupon = null;
+            if (!string.IsNullOrWhiteSpace(dto.CouponCode))
+            {
+                var code = dto.CouponCode.Trim().ToUpperInvariant();
+                appliedCoupon = await _couponRepository.GetByCodeAsync(code, cancellationToken)
+                    ?? throw new ValidationException("Promo code not found.");
+
+                CouponCalculator.EnsureApplicable(appliedCoupon, order.Subtotal);
+                order.Discount = CouponCalculator.ComputeDiscount(appliedCoupon, order.Subtotal);
+                order.CouponCode = appliedCoupon.Code;
+            }
+
             var created = await _orderRepository.CreateAsync(order, cancellationToken);
+
+            if (appliedCoupon is not null)
+            {
+                await _couponRepository.IncrementUsageAsync(appliedCoupon.Id, cancellationToken);
+            }
+
             await _actionLogService.RecordAsync(
                 "Create",
                 nameof(OrderDomain),
                 created.Id,
-                $"Created order {created.Id} with total {(created.Subtotal + created.ServicesTotal):0.00} (goods {created.Subtotal:0.00}, services {created.ServicesTotal:0.00}).",
+                $"Created order {created.Id} with total {created.Total:0.00} (goods {created.Subtotal:0.00}, discount {created.Discount:0.00}, services {created.ServicesTotal:0.00}).",
                 cancellationToken);
 
             return _mapper.Map<OrderDto>(created);
@@ -156,7 +177,7 @@ namespace ProjectBackend.BusinessLogic.Services
                 throw new ValidationException($"Only pending orders can be paid. Current status: {order.Status}.");
             }
 
-            var chargeAmount = order.Subtotal + order.ServicesTotal;
+            var chargeAmount = order.Total;
 
             var payer = EnsureFound(await _userRepository.GetByIdAsync(order.UserId, cancellationToken), "User", order.UserId);
             if (payer.Balance < chargeAmount)
@@ -245,7 +266,7 @@ namespace ProjectBackend.BusinessLogic.Services
                     }
                 }
 
-                await _userRepository.AdjustBalanceAsync(order.UserId, order.Subtotal + order.ServicesTotal, cancellationToken);
+                await _userRepository.AdjustBalanceAsync(order.UserId, order.Total, cancellationToken);
             }
 
             order.Status = OrderStatus.Cancelled;
@@ -255,7 +276,7 @@ namespace ProjectBackend.BusinessLogic.Services
             {
                 await _paymentTransactionService.RecordAsync(
                     order.UserId,
-                    order.Subtotal + order.ServicesTotal,
+                    order.Total,
                     PaymentTransactionType.Refund,
                     PaymentMethod.InternalBalance,
                     PaymentTransactionStatus.Completed,

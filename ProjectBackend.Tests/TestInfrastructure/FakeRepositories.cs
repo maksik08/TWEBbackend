@@ -587,6 +587,76 @@ namespace ProjectBackend.Tests.TestInfrastructure
             });
     }
 
+    internal sealed class FakeCouponRepository : ICouponRepository
+    {
+        public List<CouponDomain> Coupons { get; } = new();
+
+        public Task<PagedResult<CouponDomain>> GetAllAsync(CouponQueryOptions queryOptions, CancellationToken cancellationToken) =>
+            Task.FromResult(new PagedResult<CouponDomain>
+            {
+                Items = Coupons.ToList(),
+                TotalCount = Coupons.Count,
+                Page = queryOptions.Page,
+                PageSize = queryOptions.PageSize
+            });
+
+        public Task<CouponDomain?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
+            Task.FromResult(Coupons.FirstOrDefault(c => c.Id == id));
+
+        public Task<CouponDomain?> GetByCodeAsync(string code, CancellationToken cancellationToken) =>
+            Task.FromResult(Coupons.FirstOrDefault(c => c.Code == code));
+
+        public Task<bool> ExistsByCodeAsync(string code, int? excludedId, CancellationToken cancellationToken) =>
+            Task.FromResult(Coupons.Any(c => c.Code == code && (excludedId == null || c.Id != excludedId)));
+
+        public Task<CouponDomain> CreateAsync(CouponDomain entity, CancellationToken cancellationToken)
+        {
+            entity.Id = Coupons.Count + 1;
+            Coupons.Add(entity);
+            return Task.FromResult(entity);
+        }
+
+        public Task<CouponDomain?> UpdateAsync(CouponDomain entity, CancellationToken cancellationToken)
+        {
+            var existing = Coupons.FirstOrDefault(c => c.Id == entity.Id);
+            if (existing is null)
+            {
+                return Task.FromResult<CouponDomain?>(null);
+            }
+
+            existing.Code = entity.Code;
+            existing.DiscountType = entity.DiscountType;
+            existing.DiscountValue = entity.DiscountValue;
+            existing.MinOrderAmount = entity.MinOrderAmount;
+            existing.MaxUses = entity.MaxUses;
+            existing.ExpiresAt = entity.ExpiresAt;
+            existing.IsActive = entity.IsActive;
+            return Task.FromResult<CouponDomain?>(existing);
+        }
+
+        public Task<CouponDomain?> DeleteAsync(int id, CancellationToken cancellationToken)
+        {
+            var existing = Coupons.FirstOrDefault(c => c.Id == id);
+            if (existing is not null)
+            {
+                Coupons.Remove(existing);
+            }
+
+            return Task.FromResult(existing);
+        }
+
+        public Task IncrementUsageAsync(int id, CancellationToken cancellationToken)
+        {
+            var existing = Coupons.FirstOrDefault(c => c.Id == id);
+            if (existing is not null)
+            {
+                existing.UsedCount += 1;
+            }
+
+            return Task.CompletedTask;
+        }
+    }
+
     internal sealed class FakeNotificationService : INotificationService
     {
         public List<(int UserId, string Title, string Message, string? EntityType, int? EntityId)> Notifications { get; } = new();
