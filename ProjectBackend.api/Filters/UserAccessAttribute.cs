@@ -29,7 +29,8 @@ namespace ProjectBackend.api.Filters
                     UserRole.Manager,
                     UserRole.Installer,
                     UserRole.WarehouseManager,
-                    UserRole.Support))
+                    UserRole.Support,
+                    UserRole.Moderator))
             {
                 context.Result = BuildResult(StatusCodes.Status403Forbidden, "User access is required.");
             }
