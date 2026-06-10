@@ -91,7 +91,7 @@ namespace ProjectBackend.BusinessLogic.Services
             var product = EnsureFound(await _productRepository.GetByIdAsync(productId, cancellationToken), "Product", productId);
             var purchasedAt = await GetPurchaseDateAsync(productId, orderId, cancellationToken);
             var months = ParseWarrantyMonths(product.Warranty);
-            var expiresAt = purchasedAt.HasValue && months > 0
+            DateTime? expiresAt = purchasedAt.HasValue && months > 0
                 ? purchasedAt.Value.AddMonths(months)
                 : null;
 

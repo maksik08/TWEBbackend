@@ -95,6 +95,7 @@ builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<IProductReviewRepository, ProductReviewRepository>();
 builder.Services.AddScoped<IProductReviewService, ProductReviewService>();
+builder.Services.AddScoped<IAttachmentStorageService, LocalAttachmentStorageService>();
 builder.Services.AddSingleton<IImageStorageService, ImageStorageService>();
 
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
@@ -126,6 +127,8 @@ builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IPasswordResetNotifier, ConsolePasswordResetNotifier>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<IWarehouseRepository, WarehouseRepository>();
+builder.Services.AddScoped<IWarehouseOperationsService, WarehouseOperationsService>();
 builder.Services.AddScoped<IServiceRequestService, ServiceRequestService>();
 builder.Services.AddScoped<IManagerService, ManagerService>();
 builder.Services.AddScoped<IInstallerService, InstallerService>();

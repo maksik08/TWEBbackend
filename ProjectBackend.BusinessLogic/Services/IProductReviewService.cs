@@ -1,5 +1,6 @@
 using ProjectBackend.BusinessLogic.Dto;
 using ProjectBackend.Domain.Common;
+using ProjectBackend.Domain.Entities;
 
 namespace ProjectBackend.BusinessLogic.Services
 {
