@@ -81,6 +81,7 @@ namespace ProjectBackend.BusinessLogic.Services
             var normalizedName = NormalizeRequiredText(dto.Name, "Product name");
             EnsureMinimumValue(dto.Price, 0.01m, "Price");
             EnsureNonNegative(dto.StockQuantity, "Stock quantity");
+            ValidateStockThresholds(dto.MinStockLevel, dto.MaxStockLevel);
 
             var entity = _mapper.Map<ProductsDomain>(dto);
             entity.Name = normalizedName;
@@ -96,6 +97,9 @@ namespace ProjectBackend.BusinessLogic.Services
             entity.PackageContents = NormalizeStringList(dto.PackageContents);
             entity.Specifications = NormalizeSpecifications(dto.Specifications);
             entity.IsVisible = dto.IsVisible;
+            entity.MinStockLevel = dto.MinStockLevel;
+            entity.MaxStockLevel = dto.MaxStockLevel;
+            entity.WarehouseZoneId = dto.WarehouseZoneId;
 
             var created = await _repository.CreateAsync(entity, cancellationToken);
             return _mapper.Map<ProductDto>(created);
@@ -107,6 +111,7 @@ namespace ProjectBackend.BusinessLogic.Services
             var normalizedName = NormalizeRequiredText(dto.Name, "Product name");
             EnsureMinimumValue(dto.Price, 0.01m, "Price");
             EnsureNonNegative(dto.StockQuantity, "Stock quantity");
+            ValidateStockThresholds(dto.MinStockLevel, dto.MaxStockLevel);
 
             var entity = _mapper.Map<ProductsDomain>(dto);
             entity.Name = normalizedName;
@@ -122,6 +127,9 @@ namespace ProjectBackend.BusinessLogic.Services
             entity.PackageContents = NormalizeStringList(dto.PackageContents);
             entity.Specifications = NormalizeSpecifications(dto.Specifications);
             entity.IsVisible = dto.IsVisible;
+            entity.MinStockLevel = dto.MinStockLevel;
+            entity.MaxStockLevel = dto.MaxStockLevel;
+            entity.WarehouseZoneId = dto.WarehouseZoneId;
 
             var updated = await _repository.UpdateAsync(id, entity, cancellationToken);
             updated = EnsureFound(updated, "Product", id);
@@ -169,6 +177,19 @@ namespace ProjectBackend.BusinessLogic.Services
             if (supplierId.HasValue && !await _supplierRepository.ExistsAsync(supplierId.Value, cancellationToken))
             {
                 throw new ValidationException("The selected supplier does not exist.");
+            }
+        }
+
+        private static void ValidateStockThresholds(int minStockLevel, int? maxStockLevel)
+        {
+            EnsureNonNegative(minStockLevel, "Minimum stock level");
+            if (maxStockLevel.HasValue)
+            {
+                EnsureNonNegative(maxStockLevel.Value, "Maximum stock level");
+                if (maxStockLevel.Value < minStockLevel)
+                {
+                    throw new ValidationException("Maximum stock level cannot be lower than minimum stock level.");
+                }
             }
         }
     }

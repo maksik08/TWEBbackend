@@ -59,6 +59,27 @@ namespace ProjectBackend.DataAccess
         public DbSet<ServiceTariffDomain> ServiceTariffs { get; set; }
         public DbSet<SupportTicketDomain> SupportTickets { get; set; }
         public DbSet<SupportMessageDomain> SupportMessages { get; set; }
+        public DbSet<SupportAttachmentDomain> SupportAttachments { get; set; }
+        public DbSet<KnowledgeBaseArticleDomain> KnowledgeBaseArticles { get; set; }
+        public DbSet<WarrantyClaimDomain> WarrantyClaims { get; set; }
+        public DbSet<RemoteDiagnosticSessionDomain> RemoteDiagnosticSessions { get; set; }
+        public DbSet<WarehouseDomain> Warehouses { get; set; }
+        public DbSet<WarehouseZoneDomain> WarehouseZones { get; set; }
+        public DbSet<ProductStockReservationDomain> ProductStockReservations { get; set; }
+        public DbSet<StockMovementDomain> StockMovements { get; set; }
+        public DbSet<InventoryCountDomain> InventoryCounts { get; set; }
+        public DbSet<InventoryCountItemDomain> InventoryCountItems { get; set; }
+        public DbSet<PurchaseOrderDomain> PurchaseOrders { get; set; }
+        public DbSet<PurchaseOrderItemDomain> PurchaseOrderItems { get; set; }
+        public DbSet<GoodsReceiptDomain> GoodsReceipts { get; set; }
+        public DbSet<GoodsReceiptItemDomain> GoodsReceiptItems { get; set; }
+        public DbSet<SupplierReturnDomain> SupplierReturns { get; set; }
+        public DbSet<SupplierReturnItemDomain> SupplierReturnItems { get; set; }
+        public DbSet<WarehouseTransferDomain> WarehouseTransfers { get; set; }
+        public DbSet<WarehouseDocumentDomain> WarehouseDocuments { get; set; }
+        public DbSet<ProductReviewPhotoDomain> ProductReviewPhotos { get; set; }
+        public DbSet<ProductReviewReportDomain> ProductReviewReports { get; set; }
+        public DbSet<ReviewResponseTemplateDomain> ReviewResponseTemplates { get; set; }
 
         public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
@@ -79,6 +100,8 @@ namespace ProjectBackend.DataAccess
                 entity.Property(p => p.Name).HasMaxLength(200);
                 entity.Property(p => p.Price).HasColumnType("decimal(18,2)");
                 entity.Property(p => p.StockQuantity).HasDefaultValue(0);
+                entity.Property(p => p.ReservedQuantity).HasDefaultValue(0);
+                entity.Property(p => p.MinStockLevel).HasDefaultValue(0);
                 entity.Property(p => p.IsPreorder).HasDefaultValue(false);
                 entity.Property(p => p.IsVisible).HasDefaultValue(true);
                 entity.Property(p => p.Availability)
@@ -110,6 +133,11 @@ namespace ProjectBackend.DataAccess
                     .WithMany(s => s.Products)
                     .HasForeignKey(p => p.SupplierId)
                     .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(p => p.WarehouseZone)
+                    .WithMany(zone => zone.Products)
+                    .HasForeignKey(p => p.WarehouseZoneId)
+                    .OnDelete(DeleteBehavior.SetNull);
             });
 
             modelBuilder.Entity<CategoryDomain>(entity =>
@@ -287,6 +315,8 @@ namespace ProjectBackend.DataAccess
             {
                 entity.Property(ticket => ticket.Subject).HasMaxLength(200).IsRequired();
                 entity.Property(ticket => ticket.Status).HasConversion<string>().HasMaxLength(50);
+                entity.Property(ticket => ticket.Priority).HasConversion<string>().HasMaxLength(50);
+                entity.Property(ticket => ticket.SatisfactionComment).HasMaxLength(1000);
                 entity.Property(ticket => ticket.CreatedAt).HasColumnType("datetime2");
                 entity.Property(ticket => ticket.UpdatedAt).HasColumnType("datetime2");
 
@@ -321,6 +351,24 @@ namespace ProjectBackend.DataAccess
                     .OnDelete(DeleteBehavior.Restrict);
 
                 entity.HasIndex(message => message.TicketId);
+            });
+
+            modelBuilder.Entity<SupportAttachmentDomain>(entity =>
+            {
+                entity.Property(attachment => attachment.FileName).HasMaxLength(260).IsRequired();
+                entity.Property(attachment => attachment.FilePath).HasMaxLength(500).IsRequired();
+                entity.Property(attachment => attachment.CreatedAt).HasColumnType("datetime2");
+                entity.Property(attachment => attachment.UpdatedAt).HasColumnType("datetime2");
+
+                entity.HasOne(attachment => attachment.Ticket)
+                    .WithMany(ticket => ticket.Attachments)
+                    .HasForeignKey(attachment => attachment.TicketId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(attachment => attachment.UploadedByUser)
+                    .WithMany()
+                    .HasForeignKey(attachment => attachment.UploadedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             modelBuilder.Entity<ServiceTariffDomain>(entity =>
@@ -472,6 +520,8 @@ namespace ProjectBackend.DataAccess
             modelBuilder.Entity<ProductReviewDomain>(entity =>
             {
                 entity.Property(review => review.Comment).HasMaxLength(2000).IsRequired();
+                entity.Property(review => review.Status).HasConversion<string>().HasMaxLength(50);
+                entity.Property(review => review.ModeratorReply).HasMaxLength(2000);
                 entity.Property(review => review.CreatedAt).HasColumnType("datetime2");
                 entity.Property(review => review.UpdatedAt).HasColumnType("datetime2");
 
@@ -485,11 +535,235 @@ namespace ProjectBackend.DataAccess
                     .HasForeignKey(review => review.UserId)
                     .OnDelete(DeleteBehavior.Restrict);
 
+                entity.HasOne(review => review.ModeratorUser)
+                    .WithMany()
+                    .HasForeignKey(review => review.ModeratorUserId)
+                    .OnDelete(DeleteBehavior.SetNull);
+
                 entity.HasIndex(review => review.ProductId);
                 entity.HasIndex(review => new { review.UserId, review.ProductId }).IsUnique();
             });
 
+            modelBuilder.Entity<ProductReviewPhotoDomain>(entity =>
+            {
+                entity.Property(photo => photo.FileName).HasMaxLength(260).IsRequired();
+                entity.Property(photo => photo.FilePath).HasMaxLength(500).IsRequired();
+                entity.Property(photo => photo.CreatedAt).HasColumnType("datetime2");
+                entity.Property(photo => photo.UpdatedAt).HasColumnType("datetime2");
+
+                entity.HasOne(photo => photo.Review)
+                    .WithMany(review => review.Photos)
+                    .HasForeignKey(photo => photo.ReviewId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<ProductReviewReportDomain>(entity =>
+            {
+                entity.Property(report => report.Reason).HasMaxLength(1000).IsRequired();
+                entity.Property(report => report.Status).HasConversion<string>().HasMaxLength(50);
+                entity.Property(report => report.CreatedAt).HasColumnType("datetime2");
+                entity.Property(report => report.UpdatedAt).HasColumnType("datetime2");
+
+                entity.HasOne(report => report.Review)
+                    .WithMany(review => review.Reports)
+                    .HasForeignKey(report => report.ReviewId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(report => report.ReporterUser)
+                    .WithMany()
+                    .HasForeignKey(report => report.ReporterUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<ReviewResponseTemplateDomain>(entity =>
+            {
+                entity.Property(template => template.Name).HasMaxLength(120).IsRequired();
+                entity.Property(template => template.Body).HasMaxLength(2000).IsRequired();
+                entity.Property(template => template.CreatedAt).HasColumnType("datetime2");
+                entity.Property(template => template.UpdatedAt).HasColumnType("datetime2");
+            });
+
+            ConfigureWarehouse(modelBuilder);
+            ConfigureSupportWorkflow(modelBuilder);
+
             base.OnModelCreating(modelBuilder);
+        }
+
+        private static void ConfigureWarehouse(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<WarehouseDomain>(entity =>
+            {
+                entity.Property(warehouse => warehouse.Name).HasMaxLength(120).IsRequired();
+                entity.Property(warehouse => warehouse.Code).HasMaxLength(40).IsRequired();
+                entity.Property(warehouse => warehouse.Address).HasMaxLength(300);
+                entity.Property(warehouse => warehouse.CreatedAt).HasColumnType("datetime2");
+                entity.Property(warehouse => warehouse.UpdatedAt).HasColumnType("datetime2");
+                entity.HasIndex(warehouse => warehouse.Code).IsUnique();
+            });
+
+            modelBuilder.Entity<WarehouseZoneDomain>(entity =>
+            {
+                entity.Property(zone => zone.Name).HasMaxLength(120).IsRequired();
+                entity.Property(zone => zone.Code).HasMaxLength(40).IsRequired();
+                entity.Property(zone => zone.Description).HasMaxLength(300);
+                entity.Property(zone => zone.CreatedAt).HasColumnType("datetime2");
+                entity.Property(zone => zone.UpdatedAt).HasColumnType("datetime2");
+                entity.HasIndex(zone => new { zone.WarehouseId, zone.Code }).IsUnique();
+            });
+
+            modelBuilder.Entity<ProductStockReservationDomain>(entity =>
+            {
+                entity.Property(reservation => reservation.Status).HasConversion<string>().HasMaxLength(50);
+                entity.Property(reservation => reservation.CreatedAt).HasColumnType("datetime2");
+                entity.Property(reservation => reservation.UpdatedAt).HasColumnType("datetime2");
+
+                entity.HasOne(reservation => reservation.Product)
+                    .WithMany(product => product.StockReservations)
+                    .HasForeignKey(reservation => reservation.ProductId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(reservation => reservation.Order)
+                    .WithMany(order => order.StockReservations)
+                    .HasForeignKey(reservation => reservation.OrderId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<StockMovementDomain>(entity =>
+            {
+                entity.Property(movement => movement.Type).HasConversion<string>().HasMaxLength(50);
+                entity.Property(movement => movement.ReferenceType).HasMaxLength(100);
+                entity.Property(movement => movement.Note).HasMaxLength(500);
+                entity.Property(movement => movement.CreatedAt).HasColumnType("datetime2");
+                entity.Property(movement => movement.UpdatedAt).HasColumnType("datetime2");
+                entity.HasIndex(movement => movement.ProductId);
+                entity.HasIndex(movement => movement.CreatedAt);
+            });
+
+            modelBuilder.Entity<InventoryCountDomain>(entity =>
+            {
+                entity.Property(count => count.CountNumber).HasMaxLength(40).IsRequired();
+                entity.Property(count => count.Note).HasMaxLength(500);
+                entity.Property(count => count.CreatedAt).HasColumnType("datetime2");
+                entity.Property(count => count.UpdatedAt).HasColumnType("datetime2");
+                entity.HasIndex(count => count.CountNumber).IsUnique();
+            });
+
+            modelBuilder.Entity<InventoryCountItemDomain>(entity =>
+            {
+                entity.HasOne(item => item.InventoryCount)
+                    .WithMany(count => count.Items)
+                    .HasForeignKey(item => item.InventoryCountId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<PurchaseOrderDomain>(entity =>
+            {
+                entity.Property(order => order.OrderNumber).HasMaxLength(40).IsRequired();
+                entity.Property(order => order.Status).HasConversion<string>().HasMaxLength(50);
+                entity.Property(order => order.Notes).HasMaxLength(1000);
+                entity.Property(order => order.CreatedAt).HasColumnType("datetime2");
+                entity.Property(order => order.UpdatedAt).HasColumnType("datetime2");
+                entity.HasIndex(order => order.OrderNumber).IsUnique();
+            });
+
+            modelBuilder.Entity<PurchaseOrderItemDomain>(entity =>
+            {
+                entity.Property(item => item.UnitCost).HasColumnType("decimal(18,2)");
+                entity.HasOne(item => item.PurchaseOrder)
+                    .WithMany(order => order.Items)
+                    .HasForeignKey(item => item.PurchaseOrderId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<GoodsReceiptDomain>(entity =>
+            {
+                entity.Property(receipt => receipt.ReceiptNumber).HasMaxLength(40).IsRequired();
+                entity.Property(receipt => receipt.Status).HasConversion<string>().HasMaxLength(50);
+                entity.Property(receipt => receipt.Notes).HasMaxLength(1000);
+                entity.Property(receipt => receipt.CreatedAt).HasColumnType("datetime2");
+                entity.Property(receipt => receipt.UpdatedAt).HasColumnType("datetime2");
+                entity.HasIndex(receipt => receipt.ReceiptNumber).IsUnique();
+            });
+
+            modelBuilder.Entity<GoodsReceiptItemDomain>(entity =>
+            {
+                entity.Property(item => item.Note).HasMaxLength(500);
+                entity.HasOne(item => item.GoodsReceipt)
+                    .WithMany(receipt => receipt.Items)
+                    .HasForeignKey(item => item.GoodsReceiptId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<SupplierReturnDomain>(entity =>
+            {
+                entity.Property(supplierReturn => supplierReturn.ReturnNumber).HasMaxLength(40).IsRequired();
+                entity.Property(supplierReturn => supplierReturn.Status).HasConversion<string>().HasMaxLength(50);
+                entity.Property(supplierReturn => supplierReturn.Reason).HasMaxLength(1000).IsRequired();
+                entity.Property(supplierReturn => supplierReturn.CreatedAt).HasColumnType("datetime2");
+                entity.Property(supplierReturn => supplierReturn.UpdatedAt).HasColumnType("datetime2");
+                entity.HasIndex(supplierReturn => supplierReturn.ReturnNumber).IsUnique();
+            });
+
+            modelBuilder.Entity<SupplierReturnItemDomain>(entity =>
+            {
+                entity.Property(item => item.Reason).HasMaxLength(500);
+                entity.HasOne(item => item.SupplierReturn)
+                    .WithMany(supplierReturn => supplierReturn.Items)
+                    .HasForeignKey(item => item.SupplierReturnId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<WarehouseTransferDomain>(entity =>
+            {
+                entity.Property(transfer => transfer.Status).HasConversion<string>().HasMaxLength(50);
+                entity.Property(transfer => transfer.Note).HasMaxLength(500);
+                entity.Property(transfer => transfer.CreatedAt).HasColumnType("datetime2");
+                entity.Property(transfer => transfer.UpdatedAt).HasColumnType("datetime2");
+            });
+
+            modelBuilder.Entity<WarehouseDocumentDomain>(entity =>
+            {
+                entity.Property(document => document.Type).HasConversion<string>().HasMaxLength(50);
+                entity.Property(document => document.Number).HasMaxLength(40).IsRequired();
+                entity.Property(document => document.RelatedEntityType).HasMaxLength(120);
+                entity.Property(document => document.Title).HasMaxLength(200).IsRequired();
+                entity.Property(document => document.Content).HasColumnType("nvarchar(max)").IsRequired();
+                entity.Property(document => document.CreatedAt).HasColumnType("datetime2");
+                entity.Property(document => document.UpdatedAt).HasColumnType("datetime2");
+                entity.HasIndex(document => document.Number).IsUnique();
+            });
+        }
+
+        private static void ConfigureSupportWorkflow(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<KnowledgeBaseArticleDomain>(entity =>
+            {
+                entity.Property(article => article.Title).HasMaxLength(200).IsRequired();
+                entity.Property(article => article.Category).HasMaxLength(120).IsRequired();
+                entity.Property(article => article.Content).HasMaxLength(4000).IsRequired();
+                entity.Property(article => article.Status).HasConversion<string>().HasMaxLength(50);
+                entity.Property(article => article.CreatedAt).HasColumnType("datetime2");
+                entity.Property(article => article.UpdatedAt).HasColumnType("datetime2");
+                entity.HasIndex(article => article.Status);
+            });
+
+            modelBuilder.Entity<WarrantyClaimDomain>(entity =>
+            {
+                entity.Property(claim => claim.Status).HasConversion<string>().HasMaxLength(50);
+                entity.Property(claim => claim.IssueDescription).HasMaxLength(1000).IsRequired();
+                entity.Property(claim => claim.Resolution).HasMaxLength(1000);
+                entity.Property(claim => claim.CreatedAt).HasColumnType("datetime2");
+                entity.Property(claim => claim.UpdatedAt).HasColumnType("datetime2");
+            });
+
+            modelBuilder.Entity<RemoteDiagnosticSessionDomain>(entity =>
+            {
+                entity.Property(session => session.Status).HasConversion<string>().HasMaxLength(50);
+                entity.Property(session => session.Notes).HasMaxLength(2000);
+                entity.Property(session => session.Result).HasMaxLength(2000);
+                entity.Property(session => session.CreatedAt).HasColumnType("datetime2");
+                entity.Property(session => session.UpdatedAt).HasColumnType("datetime2");
+            });
         }
 
         private void ApplyAuditInformation()

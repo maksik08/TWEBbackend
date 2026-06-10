@@ -14,6 +14,7 @@ namespace ProjectBackend.BusinessLogic.Services
         private readonly IUserRepository _userRepository;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly IActionLogService _actionLogService;
+        private readonly IAttachmentStorageService _attachmentStorageService;
         private readonly IMapper _mapper;
 
         public SupportTicketService(
@@ -21,12 +22,14 @@ namespace ProjectBackend.BusinessLogic.Services
             IUserRepository userRepository,
             ICurrentUserContext currentUserContext,
             IActionLogService actionLogService,
+            IAttachmentStorageService attachmentStorageService,
             IMapper mapper)
         {
             _repository = repository;
             _userRepository = userRepository;
             _currentUserContext = currentUserContext;
             _actionLogService = actionLogService;
+            _attachmentStorageService = attachmentStorageService;
             _mapper = mapper;
         }
 
@@ -164,6 +167,73 @@ namespace ProjectBackend.BusinessLogic.Services
             return await LoadDtoAsync(ticket.Id, cancellationToken);
         }
 
+        public async Task<SupportTicketDto> EscalateAsync(int id, EscalateSupportTicketDto dto, CancellationToken cancellationToken)
+        {
+            EnsureStaff();
+            var ticket = EnsureFound(await _repository.GetTrackedByIdAsync(id, cancellationToken), "Support ticket", id);
+
+            ticket.Priority = dto.Priority;
+            ticket.EscalatedAt = DateTime.UtcNow;
+            if (ticket.Status == SupportTicketStatus.Open)
+            {
+                ticket.Status = SupportTicketStatus.InProgress;
+            }
+
+            await _repository.UpdateAsync(ticket, cancellationToken);
+
+            await _actionLogService.RecordAsync(
+                "Escalate",
+                nameof(SupportTicketDomain),
+                ticket.Id,
+                $"Support ticket #{ticket.Id} escalated to {ticket.Priority}. {NormalizeOptionalText(dto.Reason)}",
+                cancellationToken);
+
+            return await LoadDtoAsync(ticket.Id, cancellationToken);
+        }
+
+        public async Task<SupportTicketDto> RateAsync(int id, RateSupportTicketDto dto, CancellationToken cancellationToken)
+        {
+            var userId = RequireUserId();
+            var ticket = EnsureFound(await _repository.GetTrackedByIdAsync(id, cancellationToken), "Support ticket", id);
+            if (ticket.CustomerId != userId)
+            {
+                throw new NotFoundException($"Support ticket with id {id} was not found.");
+            }
+
+            if (ticket.Status is not SupportTicketStatus.Resolved and not SupportTicketStatus.Closed)
+            {
+                throw new ValidationException("Only resolved or closed tickets can be rated.");
+            }
+
+            ticket.SatisfactionRating = dto.Rating;
+            ticket.SatisfactionComment = NormalizeOptionalText(dto.Comment);
+            await _repository.UpdateAsync(ticket, cancellationToken);
+            return await LoadDtoAsync(ticket.Id, cancellationToken);
+        }
+
+        public async Task<SupportAttachmentDto> AddAttachmentAsync(int id, UploadSupportAttachmentDto dto, CancellationToken cancellationToken)
+        {
+            var userId = RequireUserId();
+            var ticket = EnsureFound(await _repository.GetByIdAsync(id, cancellationToken), "Support ticket", id);
+            EnsureCanAccess(ticket);
+
+            if (ticket.Status == SupportTicketStatus.Closed)
+            {
+                throw new ValidationException("Cannot attach files to a closed ticket.");
+            }
+
+            var storedFile = await _attachmentStorageService.SaveAsync(dto.File, "support-attachments", cancellationToken);
+            var attachment = await _repository.AddAttachmentAsync(new SupportAttachmentDomain
+            {
+                TicketId = id,
+                UploadedByUserId = userId,
+                FileName = storedFile.FileName,
+                FilePath = storedFile.RelativePath
+            }, cancellationToken);
+
+            return _mapper.Map<SupportAttachmentDto>(attachment);
+        }
+
         private async Task<PagedResult<SupportTicketDto>> ListAsync(
             SupportTicketListRequestDto request,
             int? customerId,
@@ -177,6 +247,7 @@ namespace ProjectBackend.BusinessLogic.Services
                 SortDescending = QueryValidationHelper.NormalizeSortDescending(request.SortDirection ?? "desc"),
                 Search = QueryValidationHelper.NormalizeSearch(request.Search),
                 Status = request.Status,
+                Priority = request.Priority,
                 CustomerId = customerId
             };
 

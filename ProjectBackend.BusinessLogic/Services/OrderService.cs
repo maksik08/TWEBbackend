@@ -15,6 +15,7 @@ namespace ProjectBackend.BusinessLogic.Services
         private readonly IProductRepository _productRepository;
         private readonly ICouponRepository _couponRepository;
         private readonly IPaymentTransactionService _paymentTransactionService;
+        private readonly IWarehouseOperationsService _warehouseOperationsService;
         private readonly ICurrentUserContext _currentUserContext;
         private readonly IActionLogService _actionLogService;
         private readonly IMapper _mapper;
@@ -25,6 +26,7 @@ namespace ProjectBackend.BusinessLogic.Services
             IProductRepository productRepository,
             ICouponRepository couponRepository,
             IPaymentTransactionService paymentTransactionService,
+            IWarehouseOperationsService warehouseOperationsService,
             ICurrentUserContext currentUserContext,
             IActionLogService actionLogService,
             IMapper mapper)
@@ -34,6 +36,7 @@ namespace ProjectBackend.BusinessLogic.Services
             _productRepository = productRepository;
             _couponRepository = couponRepository;
             _paymentTransactionService = paymentTransactionService;
+            _warehouseOperationsService = warehouseOperationsService;
             _currentUserContext = currentUserContext;
             _actionLogService = actionLogService;
             _mapper = mapper;
@@ -95,12 +98,12 @@ namespace ProjectBackend.BusinessLogic.Services
                 .Where(line =>
                 {
                     var product = productsById[line.ProductId];
-                    return !product.IsPreorder && product.StockQuantity < line.Quantity;
+                    return !product.IsPreorder && product.AvailableQuantity < line.Quantity;
                 })
                 .Select(line =>
                 {
                     var product = productsById[line.ProductId];
-                    return $"{product.Title ?? product.Name} (requested {line.Quantity}, available {product.StockQuantity})";
+                    return $"{product.Title ?? product.Name} (requested {line.Quantity}, available {product.AvailableQuantity})";
                 })
                 .ToList();
 
@@ -151,6 +154,7 @@ namespace ProjectBackend.BusinessLogic.Services
             }
 
             var created = await _orderRepository.CreateAsync(order, cancellationToken);
+            await _warehouseOperationsService.ReserveForOrderAsync(created, cancellationToken);
 
             if (appliedCoupon is not null)
             {
@@ -185,34 +189,10 @@ namespace ProjectBackend.BusinessLogic.Services
                 throw new ValidationException("Insufficient balance to pay for this order.");
             }
 
-            var productIds = order.Items.Select(item => item.ProductId).Distinct().ToArray();
-            var trackedProducts = await _productRepository.GetTrackedByIdsAsync(productIds, cancellationToken);
-            if (trackedProducts.Count != productIds.Length)
-            {
-                throw new ValidationException("One or more ordered products no longer exist.");
-            }
-
-            var trackedProductsById = trackedProducts.ToDictionary(product => product.Id);
-            foreach (var item in order.Items)
-            {
-                var product = trackedProductsById[item.ProductId];
-                if (product.IsPreorder)
-                {
-                    continue;
-                }
-
-                if (product.StockQuantity < item.Quantity)
-                {
-                    throw new ValidationException(
-                        $"Not enough stock for '{product.Title ?? product.Name}': available {product.StockQuantity}, required {item.Quantity}.");
-                }
-
-                product.StockQuantity -= item.Quantity;
-            }
-
             await using var transaction = await _orderRepository.BeginTransactionAsync(cancellationToken);
 
             await _userRepository.AdjustBalanceAsync(order.UserId, -chargeAmount, cancellationToken);
+            await _warehouseOperationsService.ConsumeReservationsAsync(order.Id, cancellationToken);
             order.Status = OrderStatus.Paid;
             order.PaidAt = DateTime.UtcNow;
             var updated = await _orderRepository.UpdateAsync(order, cancellationToken);
@@ -252,7 +232,11 @@ namespace ProjectBackend.BusinessLogic.Services
 
             await using var transaction = await _orderRepository.BeginTransactionAsync(cancellationToken);
 
-            if (order.Status == OrderStatus.Paid)
+            if (order.Status == OrderStatus.Pending)
+            {
+                await _warehouseOperationsService.ReleaseReservationsAsync(order.Id, cancellationToken);
+            }
+            else if (order.Status == OrderStatus.Paid)
             {
                 var productIds = order.Items.Select(item => item.ProductId).Distinct().ToArray();
                 var trackedProducts = await _productRepository.GetTrackedByIdsAsync(productIds, cancellationToken);

@@ -21,5 +21,32 @@ namespace ProjectBackend.BusinessLogic.Dto
         public string? Search { get; set; }
 
         public SupportTicketStatus? Status { get; set; }
+
+        public SupportPriority? Priority { get; set; }
+    }
+
+    public class EscalateSupportTicketDto
+    {
+        [Required]
+        [EnumDataType(typeof(SupportPriority))]
+        public SupportPriority Priority { get; set; } = SupportPriority.High;
+
+        [MaxLength(1000)]
+        public string? Reason { get; set; }
+    }
+
+    public class RateSupportTicketDto
+    {
+        [Range(1, 5)]
+        public byte Rating { get; set; }
+
+        [MaxLength(1000)]
+        public string? Comment { get; set; }
+    }
+
+    public class UploadSupportAttachmentDto
+    {
+        [Required]
+        public IFormFile File { get; set; } = null!;
     }
 }

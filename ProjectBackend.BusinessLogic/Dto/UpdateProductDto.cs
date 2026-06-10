@@ -46,6 +46,12 @@ namespace ProjectBackend.BusinessLogic.Dto
         [Range(0, int.MaxValue)]
         public int StockQuantity { get; set; }
 
+        [Range(0, int.MaxValue)]
+        public int MinStockLevel { get; set; }
+
+        [Range(0, int.MaxValue)]
+        public int? MaxStockLevel { get; set; }
+
         public bool IsPreorder { get; set; }
 
         public bool IsVisible { get; set; } = true;
@@ -53,5 +59,7 @@ namespace ProjectBackend.BusinessLogic.Dto
         public int? CategoryId { get; set; }
 
         public int? SupplierId { get; set; }
+
+        public int? WarehouseZoneId { get; set; }
     }
 }

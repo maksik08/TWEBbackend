@@ -14,6 +14,15 @@ namespace ProjectBackend.Domain.Entities
 
         public SupportTicketStatus Status { get; set; } = SupportTicketStatus.Open;
 
+        public SupportPriority Priority { get; set; } = SupportPriority.Normal;
+
+        public DateTime? EscalatedAt { get; set; }
+
+        public byte? SatisfactionRating { get; set; }
+
+        [MaxLength(1000)]
+        public string? SatisfactionComment { get; set; }
+
         /// <summary>The customer who opened the ticket.</summary>
         public int CustomerId { get; set; }
 
@@ -27,5 +36,7 @@ namespace ProjectBackend.Domain.Entities
         public UserDomain? AssignedAgent { get; set; }
 
         public ICollection<SupportMessageDomain> Messages { get; set; } = new List<SupportMessageDomain>();
+
+        public ICollection<SupportAttachmentDomain> Attachments { get; set; } = new List<SupportAttachmentDomain>();
     }
 }

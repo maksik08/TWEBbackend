@@ -23,5 +23,21 @@ namespace ProjectBackend.Domain.Entities
 
         [MaxLength(2000)]
         public required string Comment { get; set; }
+
+        public ProductReviewStatus Status { get; set; } = ProductReviewStatus.Published;
+
+        [MaxLength(2000)]
+        public string? ModeratorReply { get; set; }
+
+        public int? ModeratorUserId { get; set; }
+
+        [ForeignKey(nameof(ModeratorUserId))]
+        public UserDomain? ModeratorUser { get; set; }
+
+        public DateTime? RepliedAt { get; set; }
+
+        public ICollection<ProductReviewPhotoDomain> Photos { get; set; } = new List<ProductReviewPhotoDomain>();
+
+        public ICollection<ProductReviewReportDomain> Reports { get; set; } = new List<ProductReviewReportDomain>();
     }
 }

@@ -21,6 +21,7 @@ namespace ProjectBackend.DataAccess.Repositories
                 .AsNoTracking()
                 .Include(p => p.Category)
                 .Include(p => p.Supplier)
+                .Include(p => p.WarehouseZone)
                 .AsQueryable();
 
             if (!queryOptions.IncludeHidden)
@@ -107,6 +108,7 @@ namespace ProjectBackend.DataAccess.Repositories
                 .AsNoTracking()
                 .Include(product => product.Category)
                 .Include(product => product.Supplier)
+                .Include(product => product.WarehouseZone)
                 .OrderBy(product => product.Name)
                 .ToListAsync(cancellationToken);
         }
@@ -140,6 +142,7 @@ namespace ProjectBackend.DataAccess.Repositories
                 .AsNoTracking()
                 .Include(p => p.Category)
                 .Include(p => p.Supplier)
+                .Include(p => p.WarehouseZone)
                 .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
 
             if (product is not null)
@@ -206,15 +209,20 @@ namespace ProjectBackend.DataAccess.Repositories
             existing.Specifications = product.Specifications;
             existing.Price = product.Price;
             existing.StockQuantity = product.StockQuantity;
+            existing.ReservedQuantity = product.ReservedQuantity;
+            existing.MinStockLevel = product.MinStockLevel;
+            existing.MaxStockLevel = product.MaxStockLevel;
             existing.IsPreorder = product.IsPreorder;
             existing.IsVisible = product.IsVisible;
             existing.CategoryId = product.CategoryId;
             existing.SupplierId = product.SupplierId;
+            existing.WarehouseZoneId = product.WarehouseZoneId;
 
             await _dbContext.SaveChangesAsync(cancellationToken);
 
             await _dbContext.Entry(existing).Reference(p => p.Category).LoadAsync(cancellationToken);
             await _dbContext.Entry(existing).Reference(p => p.Supplier).LoadAsync(cancellationToken);
+            await _dbContext.Entry(existing).Reference(p => p.WarehouseZone).LoadAsync(cancellationToken);
 
             return existing;
         }
@@ -224,6 +232,7 @@ namespace ProjectBackend.DataAccess.Repositories
             var existing = await _dbContext.Products
                 .Include(product => product.Category)
                 .Include(product => product.Supplier)
+                .Include(product => product.WarehouseZone)
                 .FirstOrDefaultAsync(product => product.Id == id, cancellationToken);
 
             if (existing is null)

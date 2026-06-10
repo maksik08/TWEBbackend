@@ -35,6 +35,11 @@ namespace ProjectBackend.DataAccess.Repositories
                 query = query.Where(ticket => ticket.Status == queryOptions.Status.Value);
             }
 
+            if (queryOptions.Priority.HasValue)
+            {
+                query = query.Where(ticket => ticket.Priority == queryOptions.Priority.Value);
+            }
+
             if (queryOptions.CustomerId.HasValue)
             {
                 query = query.Where(ticket => ticket.CustomerId == queryOptions.CustomerId.Value);
@@ -64,6 +69,8 @@ namespace ProjectBackend.DataAccess.Repositories
                 .AsNoTracking()
                 .Include(ticket => ticket.Customer)
                 .Include(ticket => ticket.AssignedAgent)
+                .Include(ticket => ticket.Attachments)
+                    .ThenInclude(attachment => attachment.UploadedByUser)
                 .Include(ticket => ticket.Messages.OrderBy(message => message.CreatedAt))
                     .ThenInclude(message => message.AuthorUser)
                 .FirstOrDefaultAsync(ticket => ticket.Id == id, cancellationToken);
@@ -94,6 +101,21 @@ namespace ProjectBackend.DataAccess.Repositories
 
             await _dbContext.SaveChangesAsync(cancellationToken);
             return message;
+        }
+
+        public async Task<SupportAttachmentDomain> AddAttachmentAsync(SupportAttachmentDomain attachment, CancellationToken cancellationToken)
+        {
+            await _dbContext.SupportAttachments.AddAsync(attachment, cancellationToken);
+
+            var ticket = await _dbContext.SupportTickets.FirstOrDefaultAsync(t => t.Id == attachment.TicketId, cancellationToken);
+            if (ticket is not null)
+            {
+                ticket.UpdatedAt = DateTime.UtcNow;
+            }
+
+            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _dbContext.Entry(attachment).Reference(item => item.UploadedByUser).LoadAsync(cancellationToken);
+            return attachment;
         }
     }
 }

@@ -12,5 +12,6 @@ namespace ProjectBackend.DataAccess.Repositories
         Task<SupportTicketDomain?> GetTrackedByIdAsync(int id, CancellationToken cancellationToken);
         Task<SupportTicketDomain> UpdateAsync(SupportTicketDomain ticket, CancellationToken cancellationToken);
         Task<SupportMessageDomain> AddMessageAsync(SupportMessageDomain message, CancellationToken cancellationToken);
+        Task<SupportAttachmentDomain> AddAttachmentAsync(SupportAttachmentDomain attachment, CancellationToken cancellationToken);
     }
 }

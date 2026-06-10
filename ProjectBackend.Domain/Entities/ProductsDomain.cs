@@ -46,6 +46,12 @@ namespace ProjectBackend.Domain.Entities
 
         public int StockQuantity { get; set; }
 
+        public int ReservedQuantity { get; set; }
+
+        public int MinStockLevel { get; set; }
+
+        public int? MaxStockLevel { get; set; }
+
         public bool IsPreorder { get; set; }
 
         public bool IsVisible { get; set; } = true;
@@ -63,9 +69,19 @@ namespace ProjectBackend.Domain.Entities
         [ForeignKey(nameof(SupplierId))]
         public SupplierDomain? Supplier { get; set; }
 
+        public int? WarehouseZoneId { get; set; }
+
+        [ForeignKey(nameof(WarehouseZoneId))]
+        public WarehouseZoneDomain? WarehouseZone { get; set; }
+
         public ICollection<OrderItemDomain> OrderItems { get; set; } = new List<OrderItemDomain>();
 
         public ICollection<ProductReviewDomain> Reviews { get; set; } = new List<ProductReviewDomain>();
+
+        public ICollection<ProductStockReservationDomain> StockReservations { get; set; } = new List<ProductStockReservationDomain>();
+
+        [NotMapped]
+        public int AvailableQuantity => Math.Max(StockQuantity - ReservedQuantity, 0);
 
         [NotMapped]
         public double RatingAverage { get; set; }

@@ -8,6 +8,8 @@ namespace ProjectBackend.Domain.Query
 
         public SupportTicketStatus? Status { get; init; }
 
+        public SupportPriority? Priority { get; init; }
+
         public int? CustomerId { get; init; }
 
         public int? AssignedAgentId { get; init; }

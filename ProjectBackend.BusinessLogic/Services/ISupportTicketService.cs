@@ -12,5 +12,8 @@ namespace ProjectBackend.BusinessLogic.Services
         Task<SupportTicketDto> PostMessageAsync(int id, PostSupportMessageDto dto, CancellationToken cancellationToken);
         Task<SupportTicketDto> UpdateStatusAsync(int id, UpdateSupportTicketStatusDto dto, CancellationToken cancellationToken);
         Task<SupportTicketDto> AssignAsync(int id, AssignSupportAgentDto dto, CancellationToken cancellationToken);
+        Task<SupportTicketDto> EscalateAsync(int id, EscalateSupportTicketDto dto, CancellationToken cancellationToken);
+        Task<SupportTicketDto> RateAsync(int id, RateSupportTicketDto dto, CancellationToken cancellationToken);
+        Task<SupportAttachmentDto> AddAttachmentAsync(int id, UploadSupportAttachmentDto dto, CancellationToken cancellationToken);
     }
 }

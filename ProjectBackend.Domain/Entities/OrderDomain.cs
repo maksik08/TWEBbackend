@@ -57,5 +57,7 @@ namespace ProjectBackend.Domain.Entities
         public ICollection<OrderItemDomain> Items { get; set; } = new List<OrderItemDomain>();
 
         public ICollection<PaymentTransactionDomain> PaymentTransactions { get; set; } = new List<PaymentTransactionDomain>();
+
+        public ICollection<ProductStockReservationDomain> StockReservations { get; set; } = new List<ProductStockReservationDomain>();
     }
 }

@@ -15,6 +15,10 @@ namespace ProjectBackend.BusinessLogic.Dto
         public string? Warranty { get; set; }
         public decimal Price { get; set; }
         public int StockQuantity { get; set; }
+        public int ReservedQuantity { get; set; }
+        public int AvailableQuantity { get; set; }
+        public int MinStockLevel { get; set; }
+        public int? MaxStockLevel { get; set; }
         public bool IsPreorder { get; set; }
         public bool IsVisible { get; set; }
         public string Availability { get; set; } = "in-stock";
@@ -29,5 +33,7 @@ namespace ProjectBackend.BusinessLogic.Dto
         public string? Category { get; set; }
         public int? SupplierId { get; set; }
         public string? Supplier { get; set; }
+        public int? WarehouseZoneId { get; set; }
+        public string? WarehouseZone { get; set; }
     }
 }

@@ -9,6 +9,7 @@
         Manager = 3,
         Installer = 4,
         WarehouseManager = 5,
-        Support = 6
+        Support = 6,
+        Moderator = 7
     }
 }

@@ -10,6 +10,16 @@
 
         public int StockQuantity { get; set; }
 
+        public int ReservedQuantity { get; set; }
+
+        public int AvailableQuantity { get; set; }
+
+        public int MinStockLevel { get; set; }
+
+        public int? MaxStockLevel { get; set; }
+
+        public bool IsLowStock { get; set; }
+
         public bool IsVisible { get; set; }
     }
 }
