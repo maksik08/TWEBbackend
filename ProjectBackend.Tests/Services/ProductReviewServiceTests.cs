@@ -17,6 +17,7 @@ namespace ProjectBackend.Tests.Services
                 reviewRepo,
                 productRepo,
                 currentUser,
+                new FakeAttachmentStorageService(),
                 TestMapperFactory.Create());
         }
 

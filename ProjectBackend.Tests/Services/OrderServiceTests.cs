@@ -42,6 +42,7 @@ namespace ProjectBackend.Tests.Services
                 productRepository,
                 new FakeCouponRepository(),
                 paymentTransactionService,
+                new FakeWarehouseOperationsService(),
                 new FakeCurrentUserContext { UserId = 9, Role = UserRole.User, Username = "client" },
                 actionLogService,
                 TestMapperFactory.Create());
@@ -121,12 +122,14 @@ namespace ProjectBackend.Tests.Services
                 ]
             });
 
+            var warehouseOperationsService = new FakeWarehouseOperationsService();
             var service = new OrderService(
                 orderRepository,
                 userRepository,
                 productRepository,
                 new FakeCouponRepository(),
                 paymentTransactionService,
+                warehouseOperationsService,
                 new FakeCurrentUserContext { UserId = 9, Role = UserRole.User, Username = "client" },
                 actionLogService,
                 TestMapperFactory.Create());
@@ -137,7 +140,7 @@ namespace ProjectBackend.Tests.Services
             Assert.Single(paymentTransactionService.Payments);
             Assert.Equal(PaymentTransactionType.OrderPayment, paymentTransactionService.Payments[0].Type);
             Assert.Equal(200, paymentTransactionService.Payments[0].Amount);
-            Assert.Equal(3, productRepository.Products.Single().StockQuantity);
+            Assert.Contains(3, warehouseOperationsService.ConsumedOrders);
         }
     }
 }

@@ -136,6 +136,9 @@ namespace ProjectBackend.Tests.TestInfrastructure
     internal sealed class FakeProductReviewRepository : IProductReviewRepository
     {
         public List<ProductReviewDomain> Reviews { get; } = new();
+        public List<ProductReviewPhotoDomain> Photos { get; } = new();
+        public List<ProductReviewReportDomain> Reports { get; } = new();
+        public List<ReviewResponseTemplateDomain> Templates { get; } = new();
 
         public Task<IReadOnlyCollection<ProductReviewDomain>> GetByProductIdAsync(int productId, CancellationToken cancellationToken)
         {
@@ -146,7 +149,50 @@ namespace ProjectBackend.Tests.TestInfrastructure
             return Task.FromResult(items);
         }
 
+        public Task<PagedResult<ProductReviewDomain>> GetAllAsync(ProductReviewQueryOptions queryOptions, CancellationToken cancellationToken)
+        {
+            var query = Reviews.AsEnumerable();
+
+            if (queryOptions.ProductId.HasValue)
+            {
+                query = query.Where(review => review.ProductId == queryOptions.ProductId.Value);
+            }
+
+            if (!queryOptions.IncludeHidden)
+            {
+                query = query.Where(review => review.Status == ProductReviewStatus.Published);
+            }
+
+            if (queryOptions.Rating.HasValue)
+            {
+                query = query.Where(review => review.Rating == queryOptions.Rating.Value);
+            }
+
+            if (queryOptions.Status.HasValue)
+            {
+                query = query.Where(review => review.Status == queryOptions.Status.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(queryOptions.Search))
+            {
+                query = query.Where(review => review.Comment.Contains(queryOptions.Search));
+            }
+
+            query = queryOptions.SortBy == "rating"
+                ? queryOptions.SortDescending
+                    ? query.OrderByDescending(review => review.Rating).ThenByDescending(review => review.Id)
+                    : query.OrderBy(review => review.Rating).ThenBy(review => review.Id)
+                : queryOptions.SortDescending
+                    ? query.OrderByDescending(review => review.CreatedAt).ThenByDescending(review => review.Id)
+                    : query.OrderBy(review => review.CreatedAt).ThenBy(review => review.Id);
+
+            return Task.FromResult(Paginate(query.ToList(), queryOptions));
+        }
+
         public Task<ProductReviewDomain?> GetByIdAsync(int id, CancellationToken cancellationToken) =>
+            Task.FromResult(Reviews.FirstOrDefault(review => review.Id == id));
+
+        public Task<ProductReviewDomain?> GetTrackedByIdAsync(int id, CancellationToken cancellationToken) =>
             Task.FromResult(Reviews.FirstOrDefault(review => review.Id == id));
 
         public Task<bool> ExistsByUserAndProductAsync(int userId, int productId, CancellationToken cancellationToken) =>
@@ -159,11 +205,151 @@ namespace ProjectBackend.Tests.TestInfrastructure
             return Task.FromResult(review);
         }
 
+        public Task<ProductReviewPhotoDomain> AddPhotoAsync(ProductReviewPhotoDomain photo, CancellationToken cancellationToken)
+        {
+            photo.Id = Photos.Count + 1;
+            Photos.Add(photo);
+            return Task.FromResult(photo);
+        }
+
+        public Task<ProductReviewReportDomain> AddReportAsync(ProductReviewReportDomain report, CancellationToken cancellationToken)
+        {
+            report.Id = Reports.Count + 1;
+            Reports.Add(report);
+            return Task.FromResult(report);
+        }
+
+        public Task<PagedResult<ProductReviewReportDomain>> GetReportsAsync(ProductReviewReportQueryOptions queryOptions, CancellationToken cancellationToken)
+        {
+            var query = Reports.AsEnumerable();
+
+            if (queryOptions.Status.HasValue)
+            {
+                query = query.Where(report => report.Status == queryOptions.Status.Value);
+            }
+
+            query = queryOptions.SortDescending
+                ? query.OrderByDescending(report => report.CreatedAt).ThenByDescending(report => report.Id)
+                : query.OrderBy(report => report.CreatedAt).ThenBy(report => report.Id);
+
+            return Task.FromResult(Paginate(query.ToList(), queryOptions));
+        }
+
+        public Task<ProductReviewReportDomain?> GetTrackedReportAsync(int id, CancellationToken cancellationToken) =>
+            Task.FromResult(Reports.FirstOrDefault(report => report.Id == id));
+
+        public Task<ReviewResponseTemplateDomain> CreateTemplateAsync(ReviewResponseTemplateDomain template, CancellationToken cancellationToken)
+        {
+            template.Id = Templates.Count + 1;
+            Templates.Add(template);
+            return Task.FromResult(template);
+        }
+
+        public Task<PagedResult<ReviewResponseTemplateDomain>> GetTemplatesAsync(PagedQueryOptions queryOptions, CancellationToken cancellationToken)
+        {
+            var ordered = Templates.OrderBy(template => template.Name).ToList();
+            return Task.FromResult(Paginate(ordered, queryOptions));
+        }
+
+        public Task<ReviewResponseTemplateDomain?> GetTrackedTemplateAsync(int id, CancellationToken cancellationToken) =>
+            Task.FromResult(Templates.FirstOrDefault(template => template.Id == id));
+
+        public Task<ReviewResponseTemplateDomain> UpdateTemplateAsync(ReviewResponseTemplateDomain template, CancellationToken cancellationToken) =>
+            Task.FromResult(template);
+
         public Task DeleteAsync(ProductReviewDomain review, CancellationToken cancellationToken)
         {
             Reviews.Remove(review);
             return Task.CompletedTask;
         }
+
+        private static PagedResult<T> Paginate<T>(IReadOnlyList<T> source, PagedQueryOptions queryOptions)
+        {
+            var items = source.Skip(queryOptions.Skip).Take(queryOptions.PageSize).ToList();
+            return new PagedResult<T>
+            {
+                Items = items,
+                TotalCount = source.Count,
+                Page = queryOptions.Page,
+                PageSize = queryOptions.PageSize
+            };
+        }
+    }
+
+    internal sealed class FakeAttachmentStorageService : IAttachmentStorageService
+    {
+        public List<StoredWorkPhotoResult> StoredFiles { get; } = new();
+
+        public Task<StoredWorkPhotoResult> SaveAsync(Microsoft.AspNetCore.Http.IFormFile file, string folder, CancellationToken cancellationToken)
+        {
+            var result = new StoredWorkPhotoResult(file.FileName, $"/uploads/{folder}/{file.FileName}");
+            StoredFiles.Add(result);
+            return Task.FromResult(result);
+        }
+    }
+
+    internal sealed class FakeWarehouseOperationsService : IWarehouseOperationsService
+    {
+        public List<int> ReservedOrders { get; } = new();
+        public List<int> ConsumedOrders { get; } = new();
+        public List<int> ReleasedOrders { get; } = new();
+
+        public Task ReserveForOrderAsync(OrderDomain order, CancellationToken cancellationToken)
+        {
+            ReservedOrders.Add(order.Id);
+            return Task.CompletedTask;
+        }
+
+        public Task ConsumeReservationsAsync(int orderId, CancellationToken cancellationToken)
+        {
+            ConsumedOrders.Add(orderId);
+            return Task.CompletedTask;
+        }
+
+        public Task ReleaseReservationsAsync(int orderId, CancellationToken cancellationToken)
+        {
+            ReleasedOrders.Add(orderId);
+            return Task.CompletedTask;
+        }
+
+        public Task<IReadOnlyCollection<WarehouseZoneDto>> GetZonesAsync(CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<WarehouseZoneDto> CreateZoneAsync(CreateWarehouseZoneDto dto, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<ProductDto> UpdateThresholdsAsync(int productId, UpdateStockThresholdsDto dto, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<InventoryCountDto> RunInventoryCountAsync(CreateInventoryCountDto dto, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<PurchaseOrderDto> CreatePurchaseOrderAsync(CreatePurchaseOrderDto dto, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<PagedResult<PurchaseOrderDto>> GetPurchaseOrdersAsync(ListQueryRequestDto request, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<GoodsReceiptDto> ReceiveGoodsAsync(CreateGoodsReceiptDto dto, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<SupplierReturnDto> CreateSupplierReturnAsync(CreateSupplierReturnDto dto, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<PagedResult<SupplierReturnDto>> GetSupplierReturnsAsync(ListQueryRequestDto request, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<WarehouseTransferDto> TransferAsync(CreateWarehouseTransferDto dto, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<PagedResult<WarehouseDocumentDto>> GetDocumentsAsync(ListQueryRequestDto request, WarehouseDocumentType? type, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<WarehouseDocumentDto> PrintDocumentAsync(WarehouseDocumentType type, int relatedEntityId, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<StockForecastDto> ForecastAsync(CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
     }
 
     internal sealed class FakeCategoryRepository : ICategoryRepository
