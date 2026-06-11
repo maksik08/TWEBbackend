@@ -7,7 +7,7 @@ namespace ProjectBackend.api.Controllers
 {
     /// <summary>
     /// Service tariffs (the catalogue customers choose from).
-    /// Listing: any authenticated user. Management: admin only.
+    /// Listing: public (guest). Management: admin only.
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
@@ -21,10 +21,9 @@ namespace ProjectBackend.api.Controllers
         }
 
         /// <summary>
-        /// Lists service tariffs. By default only active ones (for the customer catalogue);
-        /// pass includeInactive=true for the admin management view.
+        /// Lists service tariffs. By default only active ones (for the public customer catalogue);
+        /// pass includeInactive=true for the admin management view (active + inactive).
         /// </summary>
-        [UserAccess]
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] bool includeInactive, CancellationToken cancellationToken)
         {
