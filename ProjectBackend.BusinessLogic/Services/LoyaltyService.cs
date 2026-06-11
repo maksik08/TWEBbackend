@@ -3,7 +3,7 @@ using ProjectBackend.BusinessLogic.Dto;
 using ProjectBackend.DataAccess.Repositories;
 using ProjectBackend.Domain.Common;
 using ProjectBackend.Domain.Entities;
-
+using ProjectBackend.Domain.Query;
 namespace ProjectBackend.BusinessLogic.Services
 {
     public class LoyaltyService : ILoyaltyService

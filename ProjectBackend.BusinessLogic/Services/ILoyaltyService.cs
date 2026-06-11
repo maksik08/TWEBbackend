@@ -1,6 +1,6 @@
 using ProjectBackend.BusinessLogic.Dto;
 using ProjectBackend.Domain.Common;
-
+using ProjectBackend.Domain.Query;
 namespace ProjectBackend.BusinessLogic.Services
 {
     public interface ILoyaltyService
